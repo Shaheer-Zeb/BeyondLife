@@ -8,7 +8,7 @@ import javax.swing.JFrame;
 
 /**
  *
- * @author EDEN COMPUTERS
+ * @author Faseeh Ur Rehman
  */
 public class BeyondLife {
 

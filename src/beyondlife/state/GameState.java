@@ -8,7 +8,7 @@ import java.awt.Graphics2D;
 
 /**
  *
- * @author EDEN COMPUTERS
+ * @author Faseeh Ur Rehman
  */
 public interface GameState {
     

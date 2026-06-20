@@ -12,16 +12,13 @@ import java.awt.RenderingHints;
 import javax.swing.JPanel;
 
 /**
- *
- * @author EDEN COMPUTERS
- */
-
-/**
  * Owns the delta-time based game loop, the InputHandler,
  * and the GameStateManager.
  *
  * Uses a background thread that updates game state and calls
  * repaint(); Swing's own double buffering handles the drawing.
+ * 
+ * @author Faseeh Ur Rehman
  */
 public class GamePanel extends JPanel implements Runnable{
     
