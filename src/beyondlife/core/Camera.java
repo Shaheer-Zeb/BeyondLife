@@ -41,6 +41,8 @@ public class Camera {
     */
     public void follow(float targetX, float targetY, float dt, float worldW, float worldH){
         
+        System.out.println("Camera following to: x = " + targetX + " y = " + targetY);
+        
         float desiredX = targetX - screenW / 2f;
         float desiredY = targetY - screenH / 2f;
         
@@ -56,6 +58,7 @@ public class Camera {
         
         //shake
         if(shakeDuration > 0){
+            System.out.println("Shake Activated: Duration: " + shakeDuration);
             shakeDuration -= dt;
             float dx = (float)(Math.random() * 2 - 1) * shakeMagnitude;
             float dy = (float)(Math.random() * 2 - 1) * shakeMagnitude;
@@ -75,6 +78,7 @@ public class Camera {
     public void shake(float duration, float magnitude){
         this.shakeDuration = duration;
         this.shakeMagnitude = magnitude;
+        System.out.println("Shake Duration and Magnitude set");
     }
     
 }
