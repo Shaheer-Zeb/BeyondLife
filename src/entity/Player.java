@@ -6,8 +6,12 @@ package entity;
 
 import core.Camera;
 import core.InputHandler;
+import entity.attack.Slash;
+import entity.attack.SoulProjectile;
 import java.awt.Graphics2D;
+import java.util.List;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 /**
  *The Player Character 
@@ -50,6 +54,22 @@ public class Player extends Entity{
     private boolean isInvincible = true;
     private float invincibleTimer = 0f;
     
+    //--------------- Attack Params --------------
+    public static final int MAX_SOUL = 99;
+    public static final int SOUL_PER_CAST = 33;
+    public static final int SOUL_PER_HIT = 11;
+    
+    private static final float SOUL_PROJECTILE_COOLDOWN = 0.35f;
+    private float soulProjectileCooldownTimer = 0f;
+    
+    private int soul = 0;
+    
+    private static final float SLASH_COOLDOWN = 0.35f;
+    private float slashCooldownTimer = 0f;
+    
+    private final List<Slash> slashes = new ArrayList<>();
+    private final List<SoulProjectile> projectiles = new ArrayList<>();
+    
     // dash state
     private boolean dashing = false;
     private float dashTimer = 0f;
@@ -58,7 +78,7 @@ public class Player extends Entity{
     // ------------------ Respawn Points ------------------
     public float spawnX, spawnY;
     
-    private InputHandler input;
+    private final InputHandler input;
     
     public Player(float x, float y, InputHandler input){
         super(x, y, PLAYER_WIDTH ,PLAYER_HEIGHT, 6);
@@ -75,10 +95,12 @@ public class Player extends Entity{
         handleDash(deltaTime);
         
         if(!dashing){
-            handleMovement(deltaTime);
+            handleMovement();
             handleJump();
             applyGravity(deltaTime);
         }
+        
+        handleAttacks(deltaTime);
         
         // Movement
         setX(getLeft() + getVelX() * deltaTime);
@@ -89,19 +111,16 @@ public class Player extends Entity{
     //---------------- Timers --------------------
     private void handleTimers(float dt){
         if(dashCooldownTimer > 0f) dashCooldownTimer -= dt;
-        if(invincibleTimer > 0f){
-            invincibleTimer -= dt;
-            isInvincible = true;
-        } 
-        else{
-            isInvincible = false;
-        }
+        if(slashCooldownTimer > 0f) slashCooldownTimer -= dt;
+        if(soulProjectileCooldownTimer > 0f) soulProjectileCooldownTimer -= dt; 
+        if (invincibleTimer > 0f) invincibleTimer -= dt;
+
+        isInvincible = invincibleTimer > 0f;
         
     }
     
     // ---------------------- Dash -------------------
     private void handleDash(float dt){
-        System.out.println("Player is DAshing");
         
         if(dashing){
             dashTimer -= dt;
@@ -113,6 +132,7 @@ public class Player extends Entity{
         }
         
         if(input.isJustPressed(KeyEvent.VK_SHIFT) && dashCooldownTimer <= 0f){
+            System.out.println("Player is Dashing");
             dash();
         }
     }
@@ -137,18 +157,21 @@ public class Player extends Entity{
     
     private void handleJump(){
 
-        if(input.isJustPressed(KeyEvent.VK_Z) && jumps < 2){
-            setVelX(JUMP_FORCE);
-            jumps++;
-            if(onGround) onGround = false;
-        }
-        else if(onWall){
-            System.out.println("Wall Jump");
-            jumps = 0;
-            setVelX(wallOnRight ? -WALL_JUMP_VX : WALL_JUMP_VX);
-            setVelY(WALL_JUMP_VY);
-            setVelX(WALL_JUMP_VX);
-            onWall = false;
+        if (input.isJustPressed(KeyEvent.VK_Z)) {
+
+            if (onWall) {
+                jumps = 0;
+                setVelX(wallOnRight ? -WALL_JUMP_VX : WALL_JUMP_VX);
+                setVelY(WALL_JUMP_VY);
+                onWall = false;
+            }
+            else if (jumps < 2) {
+                setVelY(JUMP_FORCE);
+                jumps++;
+
+                if (onGround)
+                    onGround = false;
+            }
         }
         
         // When player releases jump key early:
@@ -161,7 +184,7 @@ public class Player extends Entity{
     }
     
     //--------------- Horizontal Movement ----------------
-    private void handleMovement(float dt){
+    private void handleMovement(){
         setVelX(0);
         
         if(input.isHeld(KeyEvent.VK_LEFT)){
@@ -185,11 +208,81 @@ public class Player extends Entity{
             }
         }
     }
+    
+    //------------- Attacks ---------------
+    public int getSoul(){
+        return soul;
+    }
+    
+    private void handleAttacks(float dt){
+        slashes.removeIf(s -> {
+            s.update(dt);
+            return !s.isActive();
+        });
 
+        projectiles.removeIf(p -> {
+            p.update(dt);
+            return !p.isActive();
+        });
+        
+        if(input.isJustPressed(KeyEvent.VK_X) && slashCooldownTimer <= 0f)
+            slash();
+        
+        if(input.isJustPressed(KeyEvent.VK_C) && soulProjectileCooldownTimer <= 0f && soul >= SOUL_PER_CAST )
+            castProjectile();
+    }
+    
+    private void slash(){
+        slashCooldownTimer = SLASH_COOLDOWN;
+        slashes.add(new Slash(getLeft(), getTop(), getWidth(), getHeight(), getDir()));
+    }
+    
+    private void castProjectile(){
+        if((getDir() == Direction.LEFT || getDir() == Direction.RIGHT)){
+            soul -= SOUL_PER_CAST;
+            soulProjectileCooldownTimer = SOUL_PROJECTILE_COOLDOWN;
+            projectiles.add(new SoulProjectile(getLeft() + getWidth()/2f, getTop() + getHeight() / 2f, getDir()));
+        }
+    }
+    
+    //------------ Getters ------------
+    public boolean isDashing() {
+        return dashing;
+    }
+
+    public boolean isInvincible() {
+        return isInvincible;
+    }
+
+    public boolean isOnGround() {
+        return onGround;
+    }
+    public List<Slash> getSlashes() {
+        return slashes;
+    }
+
+    public List<SoulProjectile> getProjectiles() {
+        return projectiles;
+    }
+    
     @Override
     public void draw(Graphics2D g, Camera cam) {
     
+        drawPlayer(g, cam);
+   
+        for (Slash s : slashes)
+            s.draw(g, cam);
+
+        for (SoulProjectile p : projectiles)
+            p.draw(g, cam);
+        
     }
-    
+   
+    //----------- Draw Helper -----------------
+    private void drawPlayer(Graphics2D g, Camera cam){
+        float drawX = getLeft() - cam.offsetX;
+        float drawY = getTop() - cam.offsetY;
+        //draw player here
+    }
     
 }

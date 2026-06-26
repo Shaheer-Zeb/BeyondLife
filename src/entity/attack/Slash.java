@@ -34,7 +34,7 @@ public class Slash {
      * 
      * 
      * @param playerX player's x - coordinate in the world's space
-     * @param playerY player's y - coordiante in the world's space
+     * @param playerY player's y - coordinate in the world's space
      * @param playerW player's width
      * @param playerH player's height
      * @param dir player's the direction of attack
@@ -68,7 +68,7 @@ public class Slash {
      * Calculates and updates the slash's world position based on the player's
      * current position and direction of the attack
      * 
-     * @param playerX player's x coordiante in world space
+     * @param playerX player's x coordinate in world space
      * @param playerY player's y coordinate in world space
      */
     private void calculateXY(float playerX, float playerY){
@@ -101,6 +101,9 @@ public class Slash {
     }
 
     public boolean isActive() { return active; }
+    public void deactivate(){
+        active = false;
+    }
 
     /**
      * Checks whether this slash's hit box overlaps the given rectangle using AABB collision detection
@@ -128,6 +131,8 @@ public class Slash {
     
     //---------- Draw Helper ---------------
     private void drawSlash(Graphics2D g, Camera cam){
+        float drawX = x - cam.offsetX;
+        float drawY = y - cam.offsetY;
         //Drawing logic goes here
     }
     
