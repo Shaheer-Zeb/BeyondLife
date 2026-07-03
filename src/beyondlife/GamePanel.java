@@ -49,9 +49,6 @@ public class GamePanel extends JPanel implements Runnable{
         
     }
 
- 
-    
-    
     public void startGame(){
         if (gameThread == null){
             isRunning = true;

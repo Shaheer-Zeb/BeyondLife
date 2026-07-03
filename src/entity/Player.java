@@ -183,6 +183,15 @@ public class Player extends Entity{
             
     }
     
+    /**
+     * Called by the room when the player lands on the ground tile
+    */
+    public void landOnGround() {
+        onGround = true;
+        jumps = 0;
+        setVelY(0);
+    }
+    
     //--------------- Horizontal Movement ----------------
     private void handleMovement(){
         setVelX(0);

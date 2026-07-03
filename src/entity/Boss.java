@@ -22,8 +22,8 @@ import java.awt.event.KeyEvent;
 public class Boss extends Entity{
 
     // ----------- Characteristics ----------------------- 
-    private final static int BOSS_H = 210;
-    private final static int BOSS_W  = 120;
+    public final static int BOSS_H = 210;
+    public final static int BOSS_W  = 120;
 
     //---------------- Health ------------------------ 
     private final static int BOSS_MAX_HP = 50;
@@ -285,6 +285,12 @@ public class Boss extends Entity{
             state = State.PATROL;
             patrolTimer = 0;
         }
+    }
+    
+    @Override
+    public boolean takeDamage(int amount){
+        if(state != State.VULNERABLE) return false;
+        return super.takeDamage(amount);
     }
 
     /**

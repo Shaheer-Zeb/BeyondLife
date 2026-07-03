@@ -46,7 +46,7 @@ public class NPC extends Entity{
         
         System.out.println("Player interacted with NPC");
         
-        float npcCenter = (getLeft() - getRight()) / 2f;
+        float npcCenter = (getLeft() + getRight()) / 2f;
         float distance = Math.abs(playerCenterX - npcCenter);
         
         if(distance <= INTERACT_DISTANCE && input.isJustPressed(KeyEvent.VK_UP)){
