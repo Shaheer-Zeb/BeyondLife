@@ -16,7 +16,7 @@ import java.awt.Graphics2D;
  */
 public class SoulProjectile {
     
-    public static final int DAMAGE = 1;
+    public static final int DAMAGE = 8;
     private static final float SPEED = 400f;
     private static final float LIFETIME = 1.8f;
     private static final int RADIUS = 8;

@@ -8,6 +8,7 @@ import core.Camera;
 import core.InputHandler;
 import entity.attack.Slash;
 import entity.attack.SoulProjectile;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
 import java.awt.event.KeyEvent;
@@ -34,19 +35,19 @@ public class Player extends Entity{
     
     //------------- Physics ------------------
     private static final float MOVE_SPEED = 220f;
-    private static final float JUMP_FORCE = -520f;
+    private static final float JUMP_FORCE = -790f;
     private static final float WALL_JUMP_VX = 280f;
     private static final float WALL_JUMP_VY = -480f;
-    private static final float GRAVITY = 1100f;
+    private static final float GRAVITY = 1550f;
     private static final float MAX_FALL_SPEED = 700f;
     private int jumps = 0;
     private boolean wallOnRight = true;
     
     //-------------- Dash ---------------------
-    private static final float DASH_SPEED = 480f;
-    private static final float DASH_DURATION = 0.18f;
+    private static final float DASH_SPEED = 600f;
+    private static final float DASH_DURATION = 0.3f;
     private static final float DASH_COOLDOWN = 0.6f;
-    private static final float INVINCIBLE_DURATION = 0.22f;
+    private static final float INVINCIBLE_DURATION = 0.32f;
     
     //-------------- State ---------------------
     private boolean onGround = true;
@@ -133,14 +134,17 @@ public class Player extends Entity{
         
         if(input.isJustPressed(KeyEvent.VK_SHIFT) && dashCooldownTimer <= 0f){
             System.out.println("Player is Dashing");
+            setVelY(0);
             dash();
         }
     }
     
     private void dash(){
+        if(!(getDir() == Direction.LEFT || getDir() == Direction.RIGHT)) return;
+        
         dashing = true;
         dashTimer = DASH_DURATION;
-        dashCooldownTimer =  DASH_COOLDOWN;
+        dashCooldownTimer = DASH_COOLDOWN;
         invincibleTimer = INVINCIBLE_DURATION;
         setVelX(getDir().getValue() * DASH_SPEED);
     }
@@ -258,6 +262,11 @@ public class Player extends Entity{
         soul = Math.min(MAX_SOUL, soul + amount);
     }
     
+    public void applyKnockback(float forceX, float forceY) {
+        setVelX(forceX);
+        setVelY(forceY);
+    }
+    
     //------------ Getters ------------
     public boolean isDashing() {
         return dashing;
@@ -292,10 +301,30 @@ public class Player extends Entity{
     }
    
     //----------- Draw Helper -----------------
-    private void drawPlayer(Graphics2D g, Camera cam){
+    private void drawPlayer(Graphics2D g, Camera cam) {
         float drawX = getLeft() - cam.offsetX;
-        float drawY = getTop() - cam.offsetY;
-        //draw player here
+        float drawY = getTop()  - cam.offsetY;
+
+        // Body color — white when invincible/dashing, normal otherwise
+        Color bodyColor = dashing ? new Color(150, 200, 255) : isInvincible ? new Color(200, 200, 255) : new Color(180, 160, 220);
+
+        // Body
+        g.setColor(bodyColor);
+        g.fillRect((int) drawX, (int) drawY, getWidth(), getHeight());
+    }
+    
+    //------------ Respawn ----------------
+    public void respawn() {
+        setX(spawnX);
+        setY(spawnY);
+        setVelX(0);
+        setVelY(0);
+        setHealth(getMaxHealth());
+        soul = 0;
+        setIsAlive(true);
+        dashing = false;
+        isInvincible = false;
+        dashCooldownTimer = 0;
     }
     
 }

@@ -12,7 +12,7 @@ import entity.Player;
 import java.awt.Graphics2D;
 
 /**
- * The village — the calm area before the boss fight.
+ * The village - the calm area before the boss fight.
  *
  * Contains:
  *  - A bench
@@ -26,11 +26,11 @@ import java.awt.Graphics2D;
 public class VillageRoom extends Room {
 
     //------------------- Room Layout ----------------------
-    private static final float ROOM_W    = 2000f;
-    private static final float ROOM_H    = 620f;
-    private static final int GROUND_Y  = 560;
+    private static final float ROOM_W = 2000f;
+    private static final float ROOM_H = 620f;
+    private static final int GROUND_Y = 560;
     private static final int CEILING_Y = 60;
-    private static final int ROOM_LEFT  = 0;
+    private static final int ROOM_LEFT = 0;
     private static final int ROOM_RIGHT = (int) ROOM_W;
 
     //------------------- NPC Dimensions ------------------
@@ -62,23 +62,23 @@ public class VillageRoom extends Room {
     public VillageRoom(InputHandler input) {
         super("village", ROOM_W, ROOM_H);
 
-        // Bench — left side of the room, sitting on the floor
+        // Bench - left side of the room, sitting on the floor
         bench = new Bench(220f, GROUND_Y - 20, input);
 
         // NPCs spread across the room, all standing on the ground
-        faseeh = new NPC( 480f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
+        faseeh = new NPC( "Faseeh" ,480f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
             "Hi My Nigga. Welcome to our Game",
             "This is a project for OOP",
             "Please Sir G Marks achay de dein 🤨"
         );
 
-        shaheer = new NPC( 820f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
+        shaheer = new NPC( "Shaheer" ,820f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
             "Placeholder line",
             "Placeholder line 2",
             "Good luck, I suppose."
         );
 
-        pigeonDoctor = new NPC( 1200f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
+        pigeonDoctor = new NPC("Tuff Pigeon", 1200f, GROUND_Y - NPC_H, NPC_H, NPC_W, input,
             "I have One Advice",
             "Be Tuff",
             "Like Me"
@@ -136,7 +136,7 @@ public class VillageRoom extends Room {
             player.setVelX(0);
         }
 
-        // Right wall — blocked by the door frame, not a free exit
+        // Right wall - blocked by the door frame, not a free exit
         if (player.getLeft() + player.getWidth() >= ROOM_RIGHT) {
             player.setX(ROOM_RIGHT - player.getWidth());
             player.setVelX(0);
@@ -169,7 +169,7 @@ public class VillageRoom extends Room {
      * Draws the room background, floor, door, and all entities.
      * HUD is handled by the active game state, not here.
      *
-     * @param g   drawing object
+     * @param g drawing object
      * @param cam camera used to convert world coordinates to screen coordinates
      */
     @Override
@@ -189,7 +189,7 @@ public class VillageRoom extends Room {
     /**
      * Draws the village background fill.
      *
-     * @param g   drawing object
+     * @param g drawing object
      * @param cam active camera
      */
     private void drawBackground(Graphics2D g, Camera cam) {

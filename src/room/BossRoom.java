@@ -32,11 +32,11 @@ import java.awt.Graphics2D;
 public class BossRoom extends Room {
 
     //------------------- Room Layout ----------------------
-    private static final float ROOM_W   = 1400f;
-    private static final float ROOM_H   = 620f;
+    private static final float ROOM_W = 1400f;
+    private static final float ROOM_H = 620f;
     private static final int GROUND_Y = 560;
     private static final int CEILING_Y = 60;
-    private static final int ROOM_LEFT  = 0;
+    private static final int ROOM_LEFT = 0;
     private static final int ROOM_RIGHT = (int) ROOM_W;
 
     //-------------------- Boss ----------------------------
@@ -50,9 +50,13 @@ public class BossRoom extends Room {
      * Frames the player is immune to boss-body contact after being hit.
      * Prevents instant repeated damage from standing inside the boss.
      */
-    private static final int CONTACT_IFRAME_DURATION = 40;
-    private int contactIframeTimer = 0;
+    private static final float CONTACT_IFRAME_DURATION = 0.9f;
+    private float contactIframeTimer = 0;
 
+    //------------------ KnockBack Force ----------------------
+    private static final float KNOCKBCK_X = -350f;
+    private static final float KNOCKBCK_Y = -250f;
+    
     /**
      * Creates the boss room, spawning the boss centered on the arena floor.
      *
@@ -89,9 +93,11 @@ public class BossRoom extends Room {
 
         updatePlayerPhysics(dt, player);
 
-        if (contactIframeTimer > 0) contactIframeTimer--;
+        if(contactIframeTimer > 0f){
+            contactIframeTimer -= dt;
+        }
 
-        if (!bossDefeated){
+        if(!bossDefeated){
             checkSlashHits(player);
             checkProjectileHits(player);
             checkBeamHits(player);
@@ -108,7 +114,7 @@ public class BossRoom extends Room {
      * Horizontal wall clamping is also applied here so the player cannot
      * leave the arena during the fight.
      *
-     * @param dt     delta time in seconds
+     * @param dt delta time in seconds
      * @param player the active player
      */
     private void updatePlayerPhysics(float dt, Player player) {
@@ -152,7 +158,7 @@ public class BossRoom extends Room {
             if (!slash.isActive()) continue;
 
             if (slash.overlapsRect(boss.getLeft(), boss.getTop(), boss.getWidth(), boss.getHeight())){
-                boss.takeDamage(1);
+                boss.takeDamage(5);
                 slash.deactivate();
                 player.gainSoul(Player.SOUL_PER_HIT);
             }
@@ -207,12 +213,22 @@ public class BossRoom extends Room {
         boolean overlapping =
             player.getLeft() < boss.getLeft() + boss.getWidth() &&
             player.getLeft() + player.getWidth() > boss.getLeft() &&
-            player.getTop() < boss.getTop()  + boss.getHeight() &&
-            player.getTop() + player.getHeight() > boss.getTop();
+            player.getTop() < boss.getTop() + boss.getHeight() &&
+            player.getTop() + player.getHeight() > boss.getTop() &&
+            boss.isFightStarted();
 
         if (overlapping){
             player.takeDamage(1);
             contactIframeTimer = CONTACT_IFRAME_DURATION;
+            
+            float bossCenter = boss.getLeft() + boss.getWidth() / 2f;
+            float playerCenter = player.getLeft() + player.getWidth() / 2f;
+
+            if (playerCenter < bossCenter) {
+                player.applyKnockback(KNOCKBCK_X, KNOCKBCK_Y);
+            } else {
+                player.applyKnockback(-KNOCKBCK_X, -250f);
+            }
         }
     }
 
@@ -222,7 +238,7 @@ public class BossRoom extends Room {
      * Draws the room background, floor, and all entities.
      * HUD is handled by the active game state, not here.
      *
-     * @param g   drawing object
+     * @param g drawing object
      * @param cam camera used to convert world coordinates to screen coordinates
      */
     @Override
@@ -237,7 +253,7 @@ public class BossRoom extends Room {
     /**
      * Draws the arena background.
      *
-     * @param g   drawing object
+     * @param g drawing object
      * @param cam active camera
      */
     private void drawBackground(Graphics2D g, Camera cam) {
@@ -247,7 +263,7 @@ public class BossRoom extends Room {
     /**
      * Draws the arena floor ledge.
      *
-     * @param g   drawing object
+     * @param g drawing object
      * @param cam active camera
      */
     private void drawFloor(Graphics2D g, Camera cam) {

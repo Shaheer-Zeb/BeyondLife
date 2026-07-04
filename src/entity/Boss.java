@@ -6,6 +6,8 @@ package entity;
 
 import core.Camera;
 import core.InputHandler;
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 
@@ -23,7 +25,7 @@ public class Boss extends Entity{
 
     // ----------- Characteristics ----------------------- 
     public final static int BOSS_H = 210;
-    public final static int BOSS_W  = 120;
+    public final static int BOSS_W = 120;
 
     //---------------- Health ------------------------ 
     private final static int BOSS_MAX_HP = 50;
@@ -60,12 +62,12 @@ public class Boss extends Entity{
 
     //----------------- Leap tuning -------------------------------
     private float hangTimer = 0;
-    private final float HANG_DURATION = 0.6f;
+    private final float HANG_DURATION = 0.9f;
     private final float HANG_THRESHOLD_Y = 40f;
-    private final float LEAP_LAUNCH_VY = -750f;
+    private final float LEAP_LAUNCH_VY = -800f;
     private final float SLAM_GRAVITY = 900f;
     private final float ARC_START_VY = 120f;
-    private final float ARC_DURATION = 0.35f;
+    private final float ARC_DURATION = 0.32f;
 
     private float leapTargetX = 0f;
 
@@ -347,10 +349,71 @@ public class Boss extends Entity{
     /** 
      * Draws both beam slabs with a soft outer glow and a bright core + outline.
      */
-    private void drawBeam(Graphics2D g, Camera cam){
+    private void drawBeam(Graphics2D g, Camera cam) {
+        int oy = (int)(beamOriginY - cam.offsetY);
+        int sh = SLAB_HEIGHT;
+        int sw = SLAB_WIDTH;
+
+        // Right slab
+        int rx = (int)(beamRightX - cam.offsetX);
+        g.setColor(new Color(255, 140, 0, 70));
+        g.fillRect(rx - 5, oy - sh - 8, sw + 10, sh + 12);
+        g.setColor(new Color(255, 210, 50, 220));
+        g.fillRect(rx, oy - sh, sw, sh);
+        g.setColor(new Color(255, 255, 200, 255));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(rx, oy - sh, sw, sh);
+
+        // Left slab
+        int lx = (int)(beamLeftX - cam.offsetX) - sw;
+        g.setColor(new Color(255, 140, 0, 70));
+        g.fillRect(lx - 5, oy - sh - 8, sw + 10, sh + 12);
+        g.setColor(new Color(255, 210, 50, 220));
+        g.fillRect(lx, oy - sh, sw, sh);
+        g.setColor(new Color(255, 255, 200, 255));
+        g.drawRect(lx, oy - sh, sw, sh);
+
+        g.setStroke(new BasicStroke(1f));
     }
     
-    private void drawBoss(Graphics2D g, Camera cam){
-        
+    private void drawBoss(Graphics2D g, Camera cam) {
+    float drawX = getLeft() - cam.offsetX;
+    float drawY = getTop() - cam.offsetY;
+
+    Color bodyColor = switch (state) {
+        case DORMANT -> new Color(70,  70,  80);
+        case PATROL -> new Color(60,  80,  160);
+        case LEAP -> new Color(200, 80,  50);
+        case SLAM -> new Color(220, 180, 40);
+        case VULNERABLE -> new Color(220, 220, 255);
+    };
+
+    // Body
+    g.setColor(bodyColor);
+    g.fillRect((int) drawX, (int) drawY, BOSS_W, BOSS_H);
+    
+    drawHealthBar(g, drawX, drawY);
+
     }
+    private void drawHealthBar(Graphics2D g, float drawX, float drawY) {
+        int barW = 100, barH = 8;
+        int barX = (int)(drawX + BOSS_W / 2f - barW / 2f);
+        int barY = (int)(drawY - 20);
+
+        // Track
+        g.setColor(new Color(30, 25, 40));
+        g.fillRoundRect(barX, barY, barW, barH, barH, barH);
+
+        // Fill — purple when vulnerable, red otherwise
+        float hpRatio  = (float) getHealth() / getMaxHealth();
+        Color fillColor = (state == State.VULNERABLE) ? new Color(100, 60,  220) : new Color(200, 40,  40);
+        g.setColor(fillColor);
+        g.fillRoundRect(barX, barY, (int)(barW * hpRatio), barH, barH, barH);
+
+        // Outline
+        g.setColor(new Color(80, 70, 100));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRoundRect(barX, barY, barW, barH, barH, barH);
+        g.setStroke(new BasicStroke(1f));
+}
 }

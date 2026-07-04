@@ -39,7 +39,7 @@ public abstract class Entity {
         this.width = width;
         this.height = height;
         this.maxHealth = maxHealth;
-        this.health = health;
+        this.health = maxHealth;
         this.isAlive = true;
         
     }

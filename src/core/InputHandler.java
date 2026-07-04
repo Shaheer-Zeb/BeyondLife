@@ -48,7 +48,7 @@ public class InputHandler extends KeyAdapter{
         justReleased.add(e.getKeyCode());
     }
     
-    public void flushJustSets(){
+    public void flushJustPressed(){
         justPressed.clear();
         justReleased.clear();
     }
