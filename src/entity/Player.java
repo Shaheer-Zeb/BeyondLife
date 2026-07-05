@@ -47,7 +47,12 @@ public class Player extends Entity{
     private static final float DASH_SPEED = 600f;
     private static final float DASH_DURATION = 0.3f;
     private static final float DASH_COOLDOWN = 0.6f;
-    private static final float INVINCIBLE_DURATION = 0.32f;
+    private static final float INVINCIBLE_DURATION = 0.34f;
+    
+    //----------------- Knockback ---------------------
+    private boolean knockedBack = false;
+    private float knockbackTimer = 0f;
+    private static final float KNOCKBACK_DURATION = 0.25f;
     
     //-------------- State ---------------------
     private boolean onGround = true;
@@ -96,8 +101,10 @@ public class Player extends Entity{
         handleDash(deltaTime);
         
         if(!dashing){
-            handleMovement();
-            handleJump();
+            if(!knockedBack){
+                handleMovement();
+                handleJump(deltaTime);               
+            }
             applyGravity(deltaTime);
         }
         
@@ -114,6 +121,8 @@ public class Player extends Entity{
         if(dashCooldownTimer > 0f) dashCooldownTimer -= dt;
         if(slashCooldownTimer > 0f) slashCooldownTimer -= dt;
         if(soulProjectileCooldownTimer > 0f) soulProjectileCooldownTimer -= dt; 
+        if(knockbackTimer > 0f) knockbackTimer -= dt;
+        if(knockbackTimer <= 0f) knockedBack = false;
         if (invincibleTimer > 0f) invincibleTimer -= dt;
 
         isInvincible = invincibleTimer > 0f;
@@ -159,7 +168,7 @@ public class Player extends Entity{
     
     //----------------- Jump -----------------------
     
-    private void handleJump(){
+    private void handleJump(float dt){
 
         if (input.isJustPressed(KeyEvent.VK_Z)) {
 
@@ -182,7 +191,7 @@ public class Player extends Entity{
         //upward momentum is reduced
         //jump becomes shorter
         if (!input.isHeld(KeyEvent.VK_Z) && getVelY() < 0)
-            setVelY(getVelY() + 1800f * 0.016f);
+            setVelY(getVelY() + 1800f * dt);
         
             
     }
@@ -262,9 +271,13 @@ public class Player extends Entity{
         soul = Math.min(MAX_SOUL, soul + amount);
     }
     
-    public void applyKnockback(float forceX, float forceY) {
+    public void applyKnockback(float forceX, float forceY, Camera cam) {
+        cam.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
         setVelX(forceX);
         setVelY(forceY);
+        onGround = false;
+        knockedBack = true;
+        knockbackTimer = KNOCKBACK_DURATION;
     }
     
     //------------ Getters ------------

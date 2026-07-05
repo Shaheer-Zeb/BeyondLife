@@ -94,7 +94,7 @@ public class VillageRoom extends Room {
      * @param player the active player
      */
     @Override
-    public void update(float dt, Player player) {
+    public void update(float dt, Player player, Camera cam) {
         float playerCenterX = player.getLeft() + player.getWidth() / 2f;
         float playerCenterY = player.getTop() + player.getHeight() / 2f;
 

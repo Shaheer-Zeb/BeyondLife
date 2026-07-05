@@ -21,6 +21,10 @@ public class Camera {
     private float shakeDuration = 0f;
     private float shakeMagnitude = 0f;
     
+    //-------------------- Shake --------------------
+    public static final float SHAKE_DURATION = 1f;
+    public static final float SHAKE_MAGNITUDE = 2f;
+    
     private static final float LERP_SPEED = 8f;
     
     public Camera(int screenW, int screenH){
@@ -41,7 +45,7 @@ public class Camera {
     */
     public void follow(float targetX, float targetY, float dt, float worldW, float worldH){
         
-        System.out.println("Camera following to: x = " + targetX + " y = " + targetY);
+//        System.out.println("Camera following to: x = " + targetX + " y = " + targetY);
         
         float desiredX = targetX - screenW / 2f;
         float desiredY = targetY - screenH / 2f;

@@ -8,6 +8,7 @@ import core.Camera;
 import core.InputHandler;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 
@@ -28,7 +29,7 @@ public class Boss extends Entity{
     public final static int BOSS_W = 120;
 
     //---------------- Health ------------------------ 
-    private final static int BOSS_MAX_HP = 50;
+    private final static int BOSS_MAX_HP = 250;
 
     //--------------------- Physics -------------------------------
     private final float GRAVITY = 1100f;
@@ -62,27 +63,27 @@ public class Boss extends Entity{
 
     //----------------- Leap tuning -------------------------------
     private float hangTimer = 0;
-    private final float HANG_DURATION = 0.9f;
+    private final float HANG_DURATION = 0.5f;
     private final float HANG_THRESHOLD_Y = 40f;
     private final float LEAP_LAUNCH_VY = -800f;
-    private final float SLAM_GRAVITY = 900f;
-    private final float ARC_START_VY = 120f;
-    private final float ARC_DURATION = 0.32f;
+    private final float SLAM_GRAVITY = 1500f;
+    private final float ARC_START_VY = 240f;
+    private final float ARC_DURATION = 0.20f;
 
     private float leapTargetX = 0f;
 
     //----------------- Vulnerable window --------------------------
     private float vulnerableTimer = 0;
-    private final float VULN_DURATION = 3.0f;
+    private final float VULN_DURATION = 2.5f;
 
     //---------------------- Beam --------------------------
     private boolean beamActive = false;
     private float beamLeftX, beamRightX;
     private float beamOriginX, beamOriginY;
-    private final int SLAB_WIDTH = 22;
+    private final int SLAB_WIDTH = 24;
     private final int SLAB_HEIGHT = 240;
-    private final float BEAM_SPEED_MAX = 900f;
-    private final float BEAM_SPEED_MIN = 200f;
+    private final float BEAM_SPEED_MAX = 1500f;
+    private final float BEAM_SPEED_MIN = 400f;
     
     private final InputHandler input;
 
@@ -120,7 +121,7 @@ public class Boss extends Entity{
 
     /**
      * Attempts to start the boss fight, Mantis-Lords-style: the boss
-     * sits inert in {@code DORMANT} until the player walks within
+     * sits inert in Dormant until the player walks within
      * 
      *
      * @param playerX player's current x position
@@ -292,7 +293,8 @@ public class Boss extends Entity{
     @Override
     public boolean takeDamage(int amount){
         if(state != State.VULNERABLE) return false;
-        return super.takeDamage(amount);
+        super.takeDamage(amount);
+        return true;
     }
 
     /**
@@ -315,6 +317,10 @@ public class Boss extends Entity{
         boolean rightGone = beamRightX - SLAB_WIDTH > roomRight;
         boolean leftGone = beamLeftX + SLAB_WIDTH < roomLeft;
         if (rightGone && leftGone) beamActive = false;
+    }
+    
+    public void deactivateBeam(){
+        this.beamActive = false;
     }
     
     @Override
@@ -377,22 +383,33 @@ public class Boss extends Entity{
     }
     
     private void drawBoss(Graphics2D g, Camera cam) {
-    float drawX = getLeft() - cam.offsetX;
-    float drawY = getTop() - cam.offsetY;
+        float drawX = getLeft() - cam.offsetX;
+        float drawY = getTop() - cam.offsetY;
 
-    Color bodyColor = switch (state) {
-        case DORMANT -> new Color(70,  70,  80);
-        case PATROL -> new Color(60,  80,  160);
-        case LEAP -> new Color(200, 80,  50);
-        case SLAM -> new Color(220, 180, 40);
-        case VULNERABLE -> new Color(220, 220, 255);
-    };
 
-    // Body
-    g.setColor(bodyColor);
-    g.fillRect((int) drawX, (int) drawY, BOSS_W, BOSS_H);
-    
-    drawHealthBar(g, drawX, drawY);
+        float dist = Math.abs((playerX) - (getLeft() + BOSS_W / 2f));
+        if(!fightStarted && dist <= TRIGGER_RANGE){
+            g.setFont(new Font("Monospaced", Font.BOLD, 30));
+            g.setColor(Color.BLACK);
+            String line = "Challenge";
+            int lineW = g.getFontMetrics().stringWidth(line);
+            g.drawString(line, (int)(drawX + getWidth() / 2f - lineW / 2f), (int)(drawY + getHeight() - 230));
+        }
+
+        Color bodyColor = switch (state) {
+            case DORMANT -> new Color(70,  70,  80);
+            case PATROL -> new Color(60,  80,  160);
+            case LEAP -> new Color(200, 80,  50);
+            case SLAM -> new Color(220, 180, 40);
+            case VULNERABLE -> new Color(220, 220, 255);
+        };
+
+        // Body
+        g.setColor(bodyColor);
+        g.fillRect((int) drawX, (int) drawY, BOSS_W, BOSS_H);
+
+        if(state != state.DORMANT)
+            drawHealthBar(g, drawX, drawY);
 
     }
     private void drawHealthBar(Graphics2D g, float drawX, float drawY) {
@@ -415,5 +432,5 @@ public class Boss extends Entity{
         g.setStroke(new BasicStroke(1.5f));
         g.drawRoundRect(barX, barY, barW, barH, barH, barH);
         g.setStroke(new BasicStroke(1f));
-}
+    }
 }

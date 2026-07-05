@@ -163,7 +163,7 @@ public abstract class Entity {
             isAlive = false;
         }
         
-        System.out.println("Damage Taken");
+        //System.out.println("Damage Taken");
         return isDead();
         
     }

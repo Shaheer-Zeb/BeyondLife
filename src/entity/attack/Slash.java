@@ -133,7 +133,8 @@ public class Slash {
     private void drawSlash(Graphics2D g, Camera cam){
         float drawX = x - cam.offsetX;
         float drawY = y - cam.offsetY;
-        //Drawing logic goes here
+        
+//        g.drawRect((int)drawX, (int)drawY, width, height);
     }
     
 }

@@ -15,8 +15,8 @@ import java.awt.Graphics2D;
  * The boss arena room.
  *
  * Fight flow:
- *  - Boss starts {@code DORMANT} in the center of the arena.
- *  - Player walks close and presses UP to challenge it (Mantis-Lords-style).
+ *  - Boss starts Dormant in the center of the arena.
+ *  - Player walks close and presses UP to challenge it - Hollow Knight Style.
  *  - Boss cycles: PATROL -> LEAP -> SLAM (beam) -> VULNERABLE -> repeat.
  *  - Room transitions to the next room once the boss is defeated.
  *
@@ -24,7 +24,7 @@ import java.awt.Graphics2D;
  *  - Player slashes   -> boss (soul rewarded on hit)
  *  - Player projectiles -> boss
  *  - Boss beam slabs  -> player
- *  - Boss body        -> player (contact damage)
+ *  - Boss body  -> player (contact damage)
  *  - Ground / ceiling -> player and boss (basic AABB)
  *
  * @author EDEN COMPUTERS
@@ -41,6 +41,7 @@ public class BossRoom extends Room {
 
     //-------------------- Boss ----------------------------
     private final Boss boss;
+    private boolean challenged = false;
 
     //------------------- Win State ------------------------
     private boolean bossDefeated = false;
@@ -50,11 +51,11 @@ public class BossRoom extends Room {
      * Frames the player is immune to boss-body contact after being hit.
      * Prevents instant repeated damage from standing inside the boss.
      */
-    private static final float CONTACT_IFRAME_DURATION = 0.9f;
+    private static final float CONTACT_IFRAME_DURATION = 1.5f;
     private float contactIframeTimer = 0;
 
     //------------------ KnockBack Force ----------------------
-    private static final float KNOCKBCK_X = -350f;
+    private static final float KNOCKBCK_X = -450f;
     private static final float KNOCKBCK_Y = -250f;
     
     /**
@@ -82,11 +83,14 @@ public class BossRoom extends Room {
      * @param player the active player
      */
     @Override
-    public void update(float dt, Player player) {
+    public void update(float dt, Player player, Camera cam) {
         float playerCenterX = player.getLeft() + player.getWidth() / 2f;
 
         //Boss needs to be released from the dormant state checked devery frame
-        boss.tryStart(playerCenterX);
+        if(boss.tryStart(playerCenterX) && !challenged){
+            challenged = true;
+            cam.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
+        }
 
         boss.setPlayerPosition(playerCenterX);
         boss.update(dt);
@@ -101,9 +105,12 @@ public class BossRoom extends Room {
             checkSlashHits(player);
             checkProjectileHits(player);
             checkBeamHits(player);
-            checkBodyContact(player);
+            checkBodyContact(player, cam);
 
-            if (boss.isDead()) bossDefeated = true;
+            if (boss.isDead()){
+                cam.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
+                bossDefeated = true;
+            }
         }
     }
 
@@ -158,9 +165,11 @@ public class BossRoom extends Room {
             if (!slash.isActive()) continue;
 
             if (slash.overlapsRect(boss.getLeft(), boss.getTop(), boss.getWidth(), boss.getHeight())){
-                boss.takeDamage(5);
+                if(boss.takeDamage(5))
+                    player.gainSoul(Player.SOUL_PER_HIT);
+                
                 slash.deactivate();
-                player.gainSoul(Player.SOUL_PER_HIT);
+                
             }
         }
     }
@@ -195,6 +204,7 @@ public class BossRoom extends Room {
 
         if (boss.beamHits(player.getLeft(), player.getTop(), player.getWidth(), player.getHeight())){
             player.takeDamage(1);
+            boss.deactivateBeam();
         }
     }
 
@@ -206,7 +216,7 @@ public class BossRoom extends Room {
      *
      * @param player the active player
      */
-    private void checkBodyContact(Player player) {
+    private void checkBodyContact(Player player, Camera cam) {
         if (player.isInvincible()) return;
         if (contactIframeTimer > 0) return;
 
@@ -225,9 +235,9 @@ public class BossRoom extends Room {
             float playerCenter = player.getLeft() + player.getWidth() / 2f;
 
             if (playerCenter < bossCenter) {
-                player.applyKnockback(KNOCKBCK_X, KNOCKBCK_Y);
+                player.applyKnockback(KNOCKBCK_X, KNOCKBCK_Y, cam);
             } else {
-                player.applyKnockback(-KNOCKBCK_X, -250f);
+                player.applyKnockback(-KNOCKBCK_X, KNOCKBCK_Y, cam);
             }
         }
     }
