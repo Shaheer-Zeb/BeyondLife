@@ -11,6 +11,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 
 /**
@@ -30,13 +32,21 @@ public class NPC extends Entity{
     
     private final InputHandler input;
     
-    public NPC(String name, float x, float y, int npc_height, int npc_width, InputHandler input, String... dialogueLines){
+    //--------------- GIF Stuff - Uses a GIF for NPCs instead of spritesheets, since the NPCs always stay idle and it wouldn't make sense for spritesheets, plus timers me lag masaail a rhe the, and it also takes longer :( --------------
+    public static enum NPCTYPE{
+        FASEEH, SHAHEER, PIGEONDOCTOR;
+    }
+    private Image npcGif;
+    
+    public NPC(String name, float x, float y, int npc_height, int npc_width, InputHandler input, NPCTYPE type, String... dialogueLines){
         super(x, y, npc_width, npc_height, 1);
         this.dialogueLines = dialogueLines;
         this.input = input;
         this.name = name;
         
+        loadGif(type);
     }
+    
     
     public boolean isTalking(){
         return talking;
@@ -50,8 +60,6 @@ public class NPC extends Entity{
      */
     public void updateInteraction(float playerCenterX, float playerCenterY){
         
-        System.out.println("Player interacted with NPC");
-        
         float npcCenter = (getLeft() + getRight()) / 2f;
         float distance = Math.abs(playerCenterX - npcCenter);
         
@@ -64,6 +72,20 @@ public class NPC extends Entity{
             else{
                 lineIndex++;
                 if(lineIndex >= dialogueLines.length){
+                    lineIndex = 0;
+                    talking = false;
+                }
+            }
+        }
+        else if(distance <= INTERACT_DISTANCE && input.isJustPressed(KeyEvent.VK_DOWN)){
+            
+            if(!talking ){
+                talking = true;
+                lineIndex = 0;
+            }
+            else{
+                lineIndex--;
+                if(lineIndex < 0){
                     lineIndex = 0;
                     talking = false;
                 }
@@ -88,24 +110,16 @@ public class NPC extends Entity{
     
     //------------------- Draw Helpers ---------------------
     private void drawNPC(Graphics2D g, Camera cam) {
-        float drawX = getLeft() - cam.offsetX;
-        float drawY = getTop()  - cam.offsetY;
-
-        // Body
-        g.setColor(new Color(140, 110, 170));
-        g.fillRect((int) drawX, (int) drawY, getWidth(), getHeight());
-        
-        g.setFont(new Font("Monospaced", Font.BOLD, 12));
-        g.setColor(Color.BLACK);
-        int lineW = g.getFontMetrics().stringWidth(name) ;
-        g.drawString(name, (int)(drawX + getWidth()/2f - lineW/2f), (int)(drawY + getHeight() + 18));
-        
+        int drawX = (int)(getLeft() - cam.offsetX);
+        int drawY = (int)(getTop()  - cam.offsetY);
+                
+        g.drawImage(npcGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
         
         // Interact prompt when not already talking
         if (!talking) {
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            g.setColor(new Color(200, 185, 220));
-            String hint = "[Up Arrow Key]";
+            g.setColor(Color.WHITE);
+            String hint = name;
             int hintW = g.getFontMetrics().stringWidth(hint);
             g.drawString(hint, (int)(drawX + getWidth() / 2f - hintW / 2f), (int) drawY - 8);
         }
@@ -117,7 +131,7 @@ public class NPC extends Entity{
 
         g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         FontMetrics fm = g.getFontMetrics();
-        int textW = fm.stringWidth(dialogue);
+        int textW = fm.stringWidth(name + ": " + dialogue);
         int textH = fm.getHeight();
 
         int padding = 8;
@@ -147,8 +161,8 @@ public class NPC extends Entity{
         );
 
         // Dialogue text
-        g.setColor(new Color(230, 220, 245));
-        g.drawString(dialogue, boxX + padding, boxY + textH - 2);
+        g.setColor(Color.WHITE);
+        g.drawString(name + ": " + dialogue, boxX + padding, boxY + textH - 2);
 
         // Page indicator if more lines remain
         if (lineIndex < dialogueLines.length - 1) {
@@ -160,6 +174,17 @@ public class NPC extends Entity{
     
     @Override
     public void update(float deltaTime) {/*NPC wont move*/}
-
     
+    /**
+     * Loads the sprite sheet depending on the type of the NPC.
+     * @param type 
+     */
+    public void loadGif(NPCTYPE type){
+        switch (type)
+        {
+            case FASEEH -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/faseehIdle.gif");
+            case SHAHEER -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/shaheerIdle.gif");
+            case PIGEONDOCTOR -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/pigeonDoctorIdle.gif");
+        }
+    }
 }

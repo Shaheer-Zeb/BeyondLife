@@ -4,12 +4,21 @@
  */
 package entity;
 
+import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
+import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import javax.swing.Timer;
 
 /**
  * The boss enemy
@@ -21,14 +30,14 @@ import java.awt.event.KeyEvent;
  * 
  * @author EDEN COMPUTERS
  */
-public class Boss extends Entity{
+public class Boss extends Entity implements ActionListener{
 
     // ----------- Characteristics ----------------------- 
     public final static int BOSS_H = 210;
-    public final static int BOSS_W = 120;
+    public final static int BOSS_W = 140;
 
     //---------------- Health ------------------------ 
-    private final static int BOSS_MAX_HP = 50;
+    private final static int BOSS_MAX_HP = 75;
 
     //--------------------- Physics -------------------------------
     private final float GRAVITY = 1100f;
@@ -53,7 +62,7 @@ public class Boss extends Entity{
 
     //-------------------- Patrol -----------------------
     private float patrolTimer = 0;
-    private int patrolDir = 1;
+    private int patrolDir = -1; // 1 for right, -1 for left
     private final float PATROL_DURATION = 2f;
 
     //--------------------- Slam ----------------------
@@ -62,27 +71,30 @@ public class Boss extends Entity{
 
     //----------------- Leap tuning -------------------------------
     private float hangTimer = 0;
-    private final float HANG_DURATION = 0.9f;
+    private final float HANG_DURATION = 0.5f;
     private final float HANG_THRESHOLD_Y = 40f;
     private final float LEAP_LAUNCH_VY = -800f;
-    private final float SLAM_GRAVITY = 900f;
-    private final float ARC_START_VY = 120f;
-    private final float ARC_DURATION = 0.32f;
+    private final float SLAM_GRAVITY = 1500f;
+    private final float ARC_START_VY = 240f;
+    private final float ARC_DURATION = 0.20f;
 
     private float leapTargetX = 0f;
 
     //----------------- Vulnerable window --------------------------
     private float vulnerableTimer = 0;
-    private final float VULN_DURATION = 3.0f;
+    private final float VULN_DURATION = 2.5f;
 
     //---------------------- Beam --------------------------
     private boolean beamActive = false;
     private float beamLeftX, beamRightX;
     private float beamOriginX, beamOriginY;
-    private final int SLAB_WIDTH = 22;
-    private final int SLAB_HEIGHT = 240;
-    private final float BEAM_SPEED_MAX = 900f;
-    private final float BEAM_SPEED_MIN = 200f;
+    private final float BEAM_SPEED_MAX = 1500f;
+    private final float BEAM_SPEED_MIN = 400f;
+    
+    private BufferedImage shockBeamImage = AssetManager.getImage("/assets/sprites/boss/leftShockWave.png");
+    private final int shockBeamImageWidth = 204, shockBeamImageHeight = 116;
+    private final int SLAB_WIDTH = shockBeamImageWidth;
+    private final int SLAB_HEIGHT = shockBeamImageHeight;
     
     private final InputHandler input;
 
@@ -93,8 +105,88 @@ public class Boss extends Entity{
     private final int roomLeft;
     private final int roomRight;
     
+    // ------------------- Sprite Stuff -----------------------
+    private final BufferedImage spriteSheet = AssetManager.getImage("/assets/sprites/boss/spriteSheet.png");
+    private final int SPRITE_WIDTH = 81, SPRITE_HEIGHT = 71;
+    private int sheetX, sheetY;
+    private enum SPRITEACTION{
+        ATTACK, DEATH, FLYING, HURT, IDLE;
+    }
+    private int spriteRowNumber = SPRITEACTION.IDLE.ordinal();
+    private final int spriteChangeDelay = 100;
+    private final Timer spriteTimer;
+    
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        sheetX += SPRITE_WIDTH;
+        handleSpriteRow();
+        handleSpriteRepetition();
+        sheetY = spriteRowNumber * SPRITE_HEIGHT;
+    }
+    private void handleSpriteRow(){
+        if (null != state)
+            switch (state) 
+            {
+                case DORMANT, VULNERABLE -> spriteRowNumber = SPRITEACTION.IDLE.ordinal();
+                case PATROL -> spriteRowNumber = SPRITEACTION.FLYING.ordinal();
+                case SLAM -> spriteRowNumber = SPRITEACTION.ATTACK.ordinal();  
+            }
+        if (isDead())
+            spriteRowNumber = SPRITEACTION.DEATH.ordinal();
+        
+    }
+    private void handleSpriteRepetition(){
+        switch (spriteRowNumber)
+        {
+            case 0 -> sheetX = (sheetX > 7 * SPRITE_WIDTH) ? 0 : sheetX;
+            case 1 -> sheetX = (sheetX > 4 * SPRITE_WIDTH) ? 5 * SPRITE_WIDTH : sheetX;
+            case 2 -> sheetX = (sheetX > 3 * SPRITE_WIDTH) ? 0 : sheetX;
+            case 3 -> sheetX = (sheetX > 3 * SPRITE_WIDTH) ? 0 : sheetX;
+            case 4 -> sheetX = (sheetX > 3 * SPRITE_WIDTH) ? 0 : sheetX;
+        }
+    }
+    private void drawBoss(Graphics2D g, Camera cam) {
+        float drawX = getLeft() - cam.offsetX;
+        float drawY = getTop() - cam.offsetY;
+        drawChallengeOption(g, drawX, drawY);
+
+        // makes the boss a little transparent while the current state is vulnerable
+        float alpha = 0.87f;
+        Composite originalComposite = g.getComposite();
+        if (state == State.VULNERABLE){
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g.setColor(Color.WHITE);
+        }
+        // Body
+        BufferedImage spriteFrame = spriteSheet.getSubimage(sheetX, sheetY, SPRITE_WIDTH, SPRITE_HEIGHT);
+        if (patrolDir == -1)
+            g.drawImage(spriteFrame, (int)drawX, (int)drawY, BOSS_W, BOSS_H, null);
+        else if (patrolDir == 1)
+            g.drawImage(spriteFrame, (int)drawX + BOSS_W, (int)drawY, -BOSS_W, BOSS_H, null);
+        g.setComposite(originalComposite);
+        
+        if(state != State.DORMANT)
+            drawHealthBar(g, drawX, drawY);
+
+    }
+    private void drawChallengeOption(Graphics2D g, float drawX, float drawY){
+        float dist = Math.abs((playerX) - (getLeft() + BOSS_W / 2f));
+        if(!fightStarted && dist <= TRIGGER_RANGE){
+            g.setFont(new Font("Monospaced", Font.BOLD, 30));
+            g.setColor(Color.BLACK);
+            String line = "Challenge";
+            int lineW = g.getFontMetrics().stringWidth(line);
+            g.drawString(line, (int)(drawX + getWidth() / 2f - lineW / 2f), (int)(drawY + getHeight() - 230));
+        } 
+    }
     /**
      * Creates the boss centered horizontally on screen, standing on the ground.
+     * @param x
+     * @param y
+     * @param groundY
+     * @param input
+     * @param roomLeft
+     * @param roomRight 
      */
     public Boss(float x, float y, int groundY ,InputHandler input, int roomLeft, int roomRight){
         super(x, y, BOSS_W, BOSS_H, BOSS_MAX_HP);
@@ -102,6 +194,9 @@ public class Boss extends Entity{
         this.input = input;
         this.roomLeft = roomLeft;
         this.roomRight = roomRight;
+        
+        spriteTimer = new Timer(spriteChangeDelay, this);
+        spriteTimer.start();
     }
 
     //----------------- Getters ----------------------
@@ -120,9 +215,7 @@ public class Boss extends Entity{
 
     /**
      * Attempts to start the boss fight, Mantis-Lords-style: the boss
-     * sits inert in {@code DORMANT} until the player walks within
-     * 
-     *
+     * sits inert in Dormant until the player walks within
      * @param playerX player's current x position
      * @return true if this call is what started the fight
      */
@@ -228,6 +321,7 @@ public class Boss extends Entity{
         leapTargetX = playerX;
         setVelX(0);
         setVelY(LEAP_LAUNCH_VY);
+        SoundManager.playSfx("leap");
     }
 
     /**
@@ -263,9 +357,11 @@ public class Boss extends Entity{
 
         beamActive = true;
         beamOriginX = getLeft() + BOSS_W / 2f;
-        beamOriginY = groundY;
+        beamOriginY = groundY - SLAB_HEIGHT;
         beamRightX = beamOriginX;
         beamLeftX = beamOriginX;
+        
+        SoundManager.playSfx("slam");
     }
 
     /** Counts down the post-landing recovery before the vulnerable window opens. */
@@ -292,7 +388,9 @@ public class Boss extends Entity{
     @Override
     public boolean takeDamage(int amount){
         if(state != State.VULNERABLE) return false;
-        return super.takeDamage(amount);
+        super.takeDamage(amount);
+        SoundManager.playSfx("damageBoss");
+        return true;
     }
 
     /**
@@ -315,6 +413,10 @@ public class Boss extends Entity{
         boolean rightGone = beamRightX - SLAB_WIDTH > roomRight;
         boolean leftGone = beamLeftX + SLAB_WIDTH < roomLeft;
         if (rightGone && leftGone) beamActive = false;
+    }
+    
+    public void deactivateBeam(){
+        this.beamActive = false;
     }
     
     @Override
@@ -356,45 +458,16 @@ public class Boss extends Entity{
 
         // Right slab
         int rx = (int)(beamRightX - cam.offsetX);
-        g.setColor(new Color(255, 140, 0, 70));
-        g.fillRect(rx - 5, oy - sh - 8, sw + 10, sh + 12);
-        g.setColor(new Color(255, 210, 50, 220));
-        g.fillRect(rx, oy - sh, sw, sh);
-        g.setColor(new Color(255, 255, 200, 255));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(rx, oy - sh, sw, sh);
+        g.drawImage(shockBeamImage, rx + shockBeamImageWidth, oy, -shockBeamImageWidth, shockBeamImageHeight, null);
 
         // Left slab
         int lx = (int)(beamLeftX - cam.offsetX) - sw;
-        g.setColor(new Color(255, 140, 0, 70));
-        g.fillRect(lx - 5, oy - sh - 8, sw + 10, sh + 12);
-        g.setColor(new Color(255, 210, 50, 220));
-        g.fillRect(lx, oy - sh, sw, sh);
-        g.setColor(new Color(255, 255, 200, 255));
-        g.drawRect(lx, oy - sh, sw, sh);
+        g.drawImage(shockBeamImage, lx, oy, shockBeamImageWidth, shockBeamImageHeight, null);
 
         g.setStroke(new BasicStroke(1f));
     }
     
-    private void drawBoss(Graphics2D g, Camera cam) {
-    float drawX = getLeft() - cam.offsetX;
-    float drawY = getTop() - cam.offsetY;
-
-    Color bodyColor = switch (state) {
-        case DORMANT -> new Color(70,  70,  80);
-        case PATROL -> new Color(60,  80,  160);
-        case LEAP -> new Color(200, 80,  50);
-        case SLAM -> new Color(220, 180, 40);
-        case VULNERABLE -> new Color(220, 220, 255);
-    };
-
-    // Body
-    g.setColor(bodyColor);
-    g.fillRect((int) drawX, (int) drawY, BOSS_W, BOSS_H);
     
-    drawHealthBar(g, drawX, drawY);
-
-    }
     private void drawHealthBar(Graphics2D g, float drawX, float drawY) {
         int barW = 100, barH = 8;
         int barX = (int)(drawX + BOSS_W / 2f - barW / 2f);
@@ -415,5 +488,5 @@ public class Boss extends Entity{
         g.setStroke(new BasicStroke(1.5f));
         g.drawRoundRect(barX, barY, barW, barH, barH, barH);
         g.setStroke(new BasicStroke(1f));
-}
+    }
 }

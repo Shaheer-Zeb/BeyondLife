@@ -37,7 +37,7 @@ public abstract class Room {
      * @param dt delta time 
      * @param player player object
      */
-    public abstract void update(float dt, Player player);
+    public abstract void update(float dt, Player player, Camera cam);
     
     /**
      * Draw everything in the room except for

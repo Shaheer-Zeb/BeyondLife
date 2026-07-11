@@ -21,7 +21,7 @@ public abstract class Entity {
     private int health;
     private boolean isAlive;
     
-    private Direction dir;
+    private Direction dir = Direction.RIGHT;
     
     /**
      * Constructor to initialize the entity
@@ -162,10 +162,7 @@ public abstract class Entity {
             health = 0;
             isAlive = false;
         }
-        
-        System.out.println("Damage Taken");
         return isDead();
-        
     }
     
     /**

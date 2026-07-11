@@ -6,6 +6,7 @@ package state;
 
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
 import entity.Player;
 import java.awt.Color;
 import java.awt.Font;
@@ -38,11 +39,10 @@ public class PlayingState implements GameState {
     //------------------- Death ---------------------------
     private boolean playerDead              = false;
     private float deathTimer              = 0f;
-    private static final float DEATH_RESPAWN_DELAY = 2.0f;
+    private static final float DEATH_RESPAWN_DELAY = 2f;
 
     //------------------- Win -----------------------------
     private boolean bossDefeated = false;
-
     /**
      * Creates the playing state, initializes the player, camera,
      * and drops into the village as the starting room.
@@ -57,9 +57,9 @@ public class PlayingState implements GameState {
         this.screenH = screenH;
 
         camera = new Camera(screenW, screenH);
-        player = new Player(120f, 560f, input);
 
         currentRoom = new VillageRoom(input);
+        player = new Player(120f, VillageRoom.GROUND_Y, input);
     }
 
     //---------------------- Update --------------------------
@@ -80,11 +80,12 @@ public class PlayingState implements GameState {
         }
 
         player.update(dt);
-        currentRoom.update(dt, player);
+        currentRoom.update(dt, player, camera);
 
         camera.follow( player.getLeft() + player.getWidth()  / 2f, player.getTop() + player.getHeight() / 2f, dt, currentRoom.roomW, currentRoom.roomH);
 
         if (player.isDead()) {
+            camera.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
             playerDead = true;
             handleDeath(dt);
             input.flushJustPressed();
@@ -100,6 +101,7 @@ public class PlayingState implements GameState {
 
         // Win condition
         if (currentRoom instanceof BossRoom br && br.isWon()) {
+            camera.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
             bossDefeated = true;
         }
 
@@ -228,6 +230,7 @@ public class PlayingState implements GameState {
      * @param roomId the ID of the room to load
      */
     public void transitionToRoom(String roomId) {
+        camera.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
         pendingTransition = false;
         nextRoomId = null;
 
@@ -235,12 +238,14 @@ public class PlayingState implements GameState {
             case "boss_room" -> {
                 currentRoom = new BossRoom(input);
                 player.setX(80f);
-                player.setY(560f);
+                player.setY(BossRoom.GROUND_Y - player.getHeight());
             }
             case "village" -> {
                 currentRoom = new VillageRoom(input);
                 player.setX(player.spawnX);
                 player.setY(player.spawnY);
+                SoundManager.stopAllSfx();
+                SoundManager.playMusic("village");
             }
         }
     }

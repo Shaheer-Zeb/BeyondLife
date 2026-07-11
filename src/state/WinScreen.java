@@ -5,6 +5,7 @@
 package state;
 
 import core.InputHandler;
+import core.SoundManager;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -44,6 +45,7 @@ public class WinScreen implements GameState {
         this.input = input;
         this.screenW = screenW;
         this.screenH = screenH;
+        SoundManager.playMusic("winScreen");
     }
 
     //---------------------- Update --------------------------
@@ -124,7 +126,7 @@ public class WinScreen implements GameState {
     private void drawTitle(Graphics2D g, float alpha) {
         g.setFont(new Font("Serif", Font.BOLD, 58));
         g.setColor(new Color(230, 220, 255, (int)(255 * alpha)));
-        String title = "Kash Itni Mehnat Parhai main kar letay";
+        String title = "It's Over.";
         int titleW = g.getFontMetrics().stringWidth(title);
         g.drawString(title, screenW / 2 - titleW / 2, screenH / 2 - 20);
     }
@@ -139,7 +141,7 @@ public class WinScreen implements GameState {
         g.setFont(new Font("SansSerif", Font.PLAIN, 16));
         g.setColor(new Color(160, 140, 200, (int)(200 * alpha)));
         String[] lines = {
-            "Thanks For Playing the Game",
+            "We tried out best man.",
             "Developed By:",
             "Shaheer Zeb Khan x Faseeh Ur Rehman"
         };
