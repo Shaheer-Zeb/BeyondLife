@@ -4,9 +4,11 @@
  */
 package entity.attack;
 
+import core.AssetManager;
 import core.Camera;
 import entity.Direction;
 import java.awt.Graphics2D;
+import java.awt.Image;
 
 /**
  * Ranged Attack fired by the player. Costs Soul
@@ -19,13 +21,15 @@ public class SoulProjectile {
     public static final int DAMAGE = 8;
     private static final float SPEED = 400f;
     private static final float LIFETIME = 1.8f;
-    private static final int RADIUS = 8;
+    private static final int RADIUS = 8 * 4;
     
     public float x, y;
     private final float velX;
     
     private boolean active = true;
     private float timer = LIFETIME;
+    
+    private Image image = AssetManager.getImage("/assets/sprites/player/projectile/projectile.png");
     
     
     /**
@@ -82,8 +86,8 @@ public class SoulProjectile {
     
     //------------ Draw Helpers ------------
     private void drawSoulProjectile(Graphics2D g, Camera cam){
-        float drawX = x - cam.offsetX;
-        float drawY = y - cam.offsetY;
-        // draw soul projectile here
+        int drawX = (int)(x - cam.offsetX);
+        int drawY = (int)(y - cam.offsetY);
+        g.drawImage(image, drawX, drawY, RADIUS * 2, RADIUS * 2, null);
     }
 }

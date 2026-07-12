@@ -5,6 +5,7 @@
 package state;
 
 import core.InputHandler;
+import core.SoundManager;
 import java.awt.Graphics2D;
 
 /**
@@ -24,6 +25,10 @@ public class GameStateManager {
     //------------------- States --------------------------
     private GameState currentState;
     private PlayingState playingState;
+    
+    // ------------------ Delay Between Switching to Win Screen -----------
+    private float bossDeathTimer = 0f;
+    private static final float BOSSROOM_TO_WIN_DELAY = 1f;
 
     /**
      * Creates the manager and immediately enters the start screen.
@@ -52,7 +57,7 @@ public class GameStateManager {
         currentState.update(dt);
 
         checkStartToPlaying();
-        checkPlayingTransitions();
+        checkPlayingTransitions(dt);
         checkLoadingComplete();
     }
 
@@ -77,11 +82,14 @@ public class GameStateManager {
      * Room transition pending - switch to loading screen
      *
      */
-    private void checkPlayingTransitions() {
+    private void checkPlayingTransitions(float dt) {
         if (!(currentState instanceof PlayingState ps)) return;
 
         if (ps.isBossDefeated()) {
-            currentState = new WinScreen(input, screenW, screenH);
+            bossDeathTimer += dt;
+            if (bossDeathTimer >= BOSSROOM_TO_WIN_DELAY){
+                currentState = new WinScreen(input, screenW, screenH);
+            }
             return;
         }
 

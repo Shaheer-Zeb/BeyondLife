@@ -1,0 +1,15 @@
+Width of Each Sprite: 120
+Height of Each Sprite: 82
+
+Row 0: Attack (6 frames)
+Row 1: Death (10 frames)
+Row 2: Fall (3 frames)
+Row 3: Idle (10 frames)
+Row 4: Jump (3 frames)
+Row 5: Fall in Between (2 frames)
+Row 6: Roll (12 frames)
+Row 7: Run (10 frames)
+Row 8: Slide (4 frames)
+Row 9: Turn Around (3 frames)
+Row 10: Wall Hang (1 frame)
+Row 11: Wall Slide (3 frames)

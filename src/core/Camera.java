@@ -56,13 +56,12 @@ public class Camera {
         
         //Clamp to world boundary
         if(worldW > 0)
-          offsetX = Math.max(0 , (int)Math.min(offsetX, worldW - screenW));  
+            offsetX = Math.max(0 , (int)Math.min(offsetX, worldW - screenW));  
         if(worldH > 0)
             offsetY = Math.max(0, (int)Math.min(offsetY, worldH - screenH));
         
         //shake
         if(shakeDuration > 0){
-            System.out.println("Shake Activated: Duration: " + shakeDuration);
             shakeDuration -= dt;
             float dx = (float)(Math.random() * 2 - 1) * shakeMagnitude;
             float dy = (float)(Math.random() * 2 - 1) * shakeMagnitude;
@@ -82,7 +81,6 @@ public class Camera {
     public void shake(float duration, float magnitude){
         this.shakeDuration = duration;
         this.shakeMagnitude = magnitude;
-        System.out.println("Shake Duration and Magnitude set");
     }
     
 }

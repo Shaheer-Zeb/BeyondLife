@@ -4,14 +4,17 @@
  */
 package entity;
 
+import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
 import core.SaveData;
+import core.SoundManager;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 
 /**
  * Bench to save the game state when interacted with
@@ -23,8 +26,9 @@ import java.awt.event.KeyEvent;
  */
 public class Bench extends Entity{
 
-    private static final int benchW = 50;
-    private static final int benchH = 20;
+    private static final int benchW = 128;
+    private static final int benchH = 64 ;
+    private BufferedImage image = AssetManager.getImage("/assets/rooms/village/bench.png");
     
     private static final float INTERACT_DISTANCE = 60f;
     
@@ -60,12 +64,14 @@ public class Bench extends Entity{
         player.setHealth(player.getMaxHealth());
         
         player.spawnX = this.getLeft() + (getWidth() - player.getWidth()) / 2f;
-        player.spawnY = getTop() - player.getHeight();
+        player.spawnY = getBottom() - player.getHeight();
+        player.cropSpriteToSit();
 
         // Write to disk
         SaveData data = new SaveData(player.spawnX, player.spawnY, roomID);
         data.writeToDisk();
 
+        SoundManager.playSfx("benchRest");
         System.out.println("[Bench] Game saved.");
         
     }
@@ -80,23 +86,8 @@ public class Bench extends Entity{
     //------------------- Draw Helper -----------------
     
     private void drawBench(Graphics2D g, Camera cam) {
-        float drawX = getLeft() - cam.offsetX;
-        float drawY = getTop()  - cam.offsetY;
-
-        // Legs
-        g.setColor(new Color(90, 70, 50));
-        g.fillRect((int) drawX + 4, (int) drawY + benchH - 6, 6, 6);
-        g.fillRect((int) drawX + benchW - 10, (int) drawY + benchH - 6, 6, 6);
-
-        // Seat
-        g.setColor(new Color(120, 90, 60));
-        g.fillRect((int) drawX, (int) drawY, benchW, benchH - 6);
-
-        // Seat outline
-        g.setColor(new Color(80, 60, 40));
-        g.setStroke(new BasicStroke(1.5f));
-        g.drawRect((int) drawX, (int) drawY, benchW, benchH - 6);
-        g.setStroke(new BasicStroke(1f));
+        int x = (int)(getLeft() - cam.offsetX), y = (int)(getTop() - getHeight() / 2 - cam.offsetY);
+        g.drawImage(image, x, y, getWidth(), getHeight(), null);
     }
     
     private void drawPrompt(Graphics2D g, Camera cam) {

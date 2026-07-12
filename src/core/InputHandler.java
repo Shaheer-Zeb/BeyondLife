@@ -20,17 +20,17 @@ public class InputHandler extends KeyAdapter{
     private final Set<Integer> justReleased = new HashSet<>();
     
     public boolean isHeld(int keyCode){
-        //System.out.println(keyCode + " is Held");
+
         return held.contains(keyCode);
     }
     
     public boolean isJustPressed(int keyCode){
-        //System.out.println(keyCode + " is just Pressed");
+
         return justPressed.contains(keyCode);
     }
     
     public boolean isJustReleased(int keyCode){
-        //System.out.println(keyCode + "is just Released");
+
         return justReleased.contains(keyCode);
     }
     

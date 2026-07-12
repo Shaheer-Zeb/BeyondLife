@@ -1,0 +1,8 @@
+Sprite width: 81
+Sprite height: 71
+
+Row 0: Attack (8 frames)
+Row 1: Death (5 frames)
+Row 2: Flying (4 frames)
+Row 3: Hurt (4 frame)
+Row 4: Idle (4 frames) This row's sprites are same as the flying row.

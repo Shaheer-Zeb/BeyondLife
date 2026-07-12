@@ -5,6 +5,7 @@
 package state;
 
 import core.InputHandler;
+import core.SoundManager;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -54,6 +55,8 @@ public class StartScreen implements GameState {
         this.input = input;
         this.screenW = screenW;
         this.screenH = screenH;
+        
+        SoundManager.playMusic("startScreen");
     }
 
     //------------------- Getter --------------------------

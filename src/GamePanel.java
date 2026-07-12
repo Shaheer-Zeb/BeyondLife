@@ -4,6 +4,7 @@
  */
 
 import core.InputHandler;
+import core.SoundManager;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -23,7 +24,7 @@ import state.GameStateManager;
 public class GamePanel extends JPanel implements Runnable {
 
     //------------------- Screen Constants ----------------
-    public static final int SCREEN_W = 1300;
+    public static final int SCREEN_W = 1200;
     public static final int SCREEN_H = 700;
     private static final int TARGET_FPS = 60;
     private static final long NS_PER_FRAME = 1_000_000_000L / TARGET_FPS;
@@ -50,6 +51,7 @@ public class GamePanel extends JPanel implements Runnable {
         input = new InputHandler();
         addKeyListener(input);
 
+        SoundManager.fireSoundManager();
         gameStateManager = new GameStateManager(input, SCREEN_W, SCREEN_H);
     }
 
@@ -128,7 +130,8 @@ public class GamePanel extends JPanel implements Runnable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //  I disabled the anti aliasing mate, since it was making the Tiles loading jittery (on my system at least)
+//          g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         gameStateManager.draw(g2);
     }
 }
