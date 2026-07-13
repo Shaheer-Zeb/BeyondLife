@@ -12,6 +12,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import room.BossRoom;
+import room.GauntletRoom;
 import room.Room;
 import room.VillageRoom;
 
@@ -184,7 +185,9 @@ public class PlayingState implements GameState {
         // Room label (top right)
         g.setFont(new Font("Monospaced", Font.BOLD, 14));
         g.setColor(new Color(80, 70, 100));
-        g.drawString(currentRoom.id.toUpperCase(), screenW - 80, 24);
+        String room = currentRoom.id.toUpperCase();
+        int w = g.getFontMetrics().stringWidth(room);
+        g.drawString(room, screenW - w - 20, 24);
     }
 
     /**
@@ -236,6 +239,9 @@ public class PlayingState implements GameState {
         pendingTransition = false;
         nextRoomId = null;
 
+        player.setVelX(0);
+        player.setVelY(0);
+        
         switch (roomId) {
             case "boss_room" -> {
                 currentRoom = new BossRoom(input);
@@ -248,6 +254,11 @@ public class PlayingState implements GameState {
                 player.setY(player.spawnY);
                 SoundManager.stopAllSfx();
                 SoundManager.playMusic("village");
+            }
+            case "gauntlet_room" -> {
+                currentRoom = new GauntletRoom(input);
+                player.setX(80);
+                player.setY(800 - player.getHeight());
             }
         }
     }

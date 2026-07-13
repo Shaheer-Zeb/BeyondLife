@@ -47,9 +47,8 @@ public class VillageRoom extends Room {
     private static final int DOOR_W = 128;
     private static final int DOOR_H = 128;
     private static final int DOOR_X = ROOM_RIGHT - DOOR_W;
-//    private static final int DOOR_X = ROOM_LEFT;
     private static final int DOOR_Y = GROUND_Y - DOOR_H + 17;
-    private static final String BOSS_ROOM_ID  = "boss_room";
+    private static final String NEXT_ROOM_ID  = "gauntlet_room";
     private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
 
     //------------------- Entities ------------------------
@@ -397,12 +396,12 @@ public class VillageRoom extends Room {
 
     /**
      * Returns the boss room ID once the player walks through the door,
-     * or {@code null} while they are still in the village.
+     * or null while they are still in the village.
      *
      * @return next room ID or null
      */
     @Override
     public String getNextRoomId() {
-        return doorTriggered ? BOSS_ROOM_ID : null;
+        return doorTriggered ? NEXT_ROOM_ID : null;
     }
 }

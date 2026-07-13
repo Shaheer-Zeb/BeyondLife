@@ -8,7 +8,6 @@ import core.SoundManager;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import javax.swing.JPanel;
 import state.GameStateManager;
 
@@ -131,7 +130,8 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         //  I disabled the anti aliasing mate, since it was making the Tiles loading jittery (on my system at least)
-//          g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //  -> Ok Ok I see. Let it be then xd
+        //  g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         gameStateManager.draw(g2);
     }
 }
