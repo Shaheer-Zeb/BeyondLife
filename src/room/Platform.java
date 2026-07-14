@@ -4,10 +4,12 @@
  */
 package room;
 
+import core.AssetManager;
 import core.Camera;
 import entity.Player;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 /**
  * A static, one-way floating platform. The player can land on top of it
@@ -18,6 +20,8 @@ import java.awt.Graphics2D;
 public class Platform {
 
     private final int x, y, w, h;
+    
+    private static BufferedImage platfromImage = AssetManager.getImage("/assets/rooms/gauntlet/platform.png");
 
     public Platform(int x, int y, int w, int h) {
         this.x = x;
@@ -70,6 +74,6 @@ public class Platform {
     public void draw(Graphics2D g, Camera cam) {
         int drawX = (int) (x - cam.offsetX);
         int drawY = (int) (y - cam.offsetY);
-
+        g.drawImage(platfromImage, drawX, drawY, w, h, null);
     }
 }

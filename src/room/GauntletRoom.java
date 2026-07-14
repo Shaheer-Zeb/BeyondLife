@@ -4,12 +4,16 @@
  */
 package room;
 
+import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
 import entity.Player;
 import entity.Walker;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 
 /**
  * The gauntlet - a stretch of floating platforms between the village and the
@@ -38,19 +42,21 @@ public class GauntletRoom extends Room {
         new Platform(760, 750, 200, PLATFORM_H),
         new Platform(1100, 550, 240, PLATFORM_H)
     };
-
-    private final KillZone killZone = new KillZone(1040, ROOM_W, ROOM_H);
+    
+    private final int KILLZONE_HEIGHT = 40;
+    private final KillZone killZone = new KillZone(ROOM_H - KILLZONE_HEIGHT, ROOM_W, ROOM_H);
 
     //------------------- Walkers -----------------------------
     private final Walker walkerOnPlatform2;
     private final Walker walkerOnPlatform4;
 
     //------------------- Door -------------
-    private static final int DOOR_W = 80;
-    private static final int DOOR_H = 100;
+    private static final int DOOR_W = 128;
+    private static final int DOOR_H = 128;
     private final int doorX;
     private final int doorY;
     private boolean doorTriggered = false;
+    private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
 
     //------------------- Checkpoint (respawn point) ------------
     private boolean checkpointInitialized = false;
@@ -60,6 +66,13 @@ public class GauntletRoom extends Room {
     //----------------- Contact damage iframes ------------------
     private static final float CONTACT_IFRAME_DURATION = 1.0f;
     private float contactIframeTimer = 0f;
+    
+    // -------------------- Parallax Background --------------------
+    private BufferedImage sky = AssetManager.getImage("/assets/rooms/gauntlet/sky.png");
+    private BufferedImage cloudsOne = AssetManager.getImage("/assets/rooms/gauntlet/clouds_1.png");
+    private BufferedImage cloudsTwo = AssetManager.getImage("/assets/rooms/gauntlet/clouds_2.png");
+    private BufferedImage rocks = AssetManager.getImage("/assets/rooms/gauntlet/rocks.png");
+    private BufferedImage ground = AssetManager.getImage("/assets/rooms/gauntlet/ground.png");
 
     /**
      * Creates the gauntlet room and places both Walkers on their platforms.
@@ -72,11 +85,11 @@ public class GauntletRoom extends Room {
         Platform p2 = platforms[1];
         Platform p4 = platforms[3];
         
-        walkerOnPlatform2 = new Walker( p2.getX() + 10, p2.getY() - Walker.WALKER_H, p2.getY(), input, p2.getX(), p2.getRight());
-        walkerOnPlatform4 = new Walker( p4.getX() + 10, p4.getY() - Walker.WALKER_H, p4.getY(), input,p4.getX(), p4.getRight());
+        walkerOnPlatform2 = new Walker( p2.getX() + 10, p2.getY() - Walker.WALKER_H, p2.getY(), input, p2.getX(), p2.getRight(), Walker.WalkerType.SLIME);
+        walkerOnPlatform4 = new Walker( p4.getX() + 10, p4.getY() - Walker.WALKER_H, p4.getY(), input,p4.getX(), p4.getRight(), Walker.WalkerType.DINO);
         
         doorX = p4.getRight() - DOOR_W - 20;
-        doorY = p4.getY() - DOOR_H;
+        doorY = p4.getY() - DOOR_H + 17;
     }
 
     //---------------------- Update --------------------------
@@ -102,12 +115,11 @@ public class GauntletRoom extends Room {
         checkWalkerContact(player, walkerOnPlatform2, cam);
         checkWalkerContact(player, walkerOnPlatform4, cam);
         checkDoorTrigger(player);
-
         if (contactIframeTimer > 0f) {
             contactIframeTimer -= dt;
         }
+        
     }
-
     //---------------- Player Physics -------------------------
 
     /**
@@ -116,6 +128,7 @@ public class GauntletRoom extends Room {
      * @param player the active player
      */
     private void updatePlayerPhysics(Player player) {
+        player.leaveGround();
         for (Platform p : platforms) {
             if (p.tryLand(player, LAND_TOLERANCE)) {
                 lastSafeX = player.getLeft();
@@ -216,11 +229,33 @@ public class GauntletRoom extends Room {
     }
 
     private void drawBackground(Graphics2D g, Camera cam) {
-    
+        int roomWidth = (int)ROOM_W, roomHeight = (int)ROOM_H;
+        
+        int drawX = (int)(-cam.offsetX), drawY = (int)(-cam.offsetY);
+        g.drawImage(sky, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.2);
+        drawY = (int)(-cam.offsetY * 0.3);
+        g.drawImage(cloudsOne, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.3);
+        drawY = (int)(-cam.offsetY * 0.3);
+        g.drawImage(cloudsTwo, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.5);
+        drawY = (int)(-cam.offsetY * 0.5);
+        g.drawImage(rocks, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.5);
+        drawY = (int)(-cam.offsetY * 0.5);
+//        g.drawImage(ground, drawX, drawY, roomWidth, roomHeight, null);
+        
     }
 
     private void drawDoor(Graphics2D g, Camera cam) {
-        
+        int drawX = (int)(doorX - cam.offsetX);
+        int drawY = (int)(doorY - cam.offsetY);
+        g.drawImage(doorPortalGif, drawX, drawY, DOOR_W, DOOR_H, null);
     }
 
     //------------------- Room Transition --------------------

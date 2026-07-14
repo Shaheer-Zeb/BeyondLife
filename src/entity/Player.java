@@ -199,7 +199,7 @@ public class Player extends Entity implements ActionListener{
     }
     
     //--------------- Geavity -----------------------
-    private void applyGravity(float dt){
+    public void applyGravity(float dt){
         if(!onGround && !onWall){
             setVelY(getVelY() + GRAVITY * dt);
             if(getVelY() > MAX_FALL_SPEED) setVelY(MAX_FALL_SPEED);
@@ -264,6 +264,12 @@ public class Player extends Entity implements ActionListener{
      */
     public void leaveWall(){
         this.onWall = false;
+    }
+    /**
+     * There was an issue where the in the Gauntlet room, the player would float even after leaving the platfrom. This method is called upon every tick by the updatePlayerPhysics() in GauntletRoom.
+     */
+    public void leaveGround(){
+        onGround = false;
     }
     //--------------- Horizontal Movement ----------------
     private void handleMovement(){
