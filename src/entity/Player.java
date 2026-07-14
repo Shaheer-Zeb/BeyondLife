@@ -7,6 +7,7 @@ package entity;
 import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SaveData;
 import core.SoundManager;
 import entity.attack.Slash;
 import entity.attack.SoulProjectile;
@@ -59,6 +60,7 @@ public class Player extends Entity implements ActionListener{
     private static final float DASH_DURATION = 0.3f;
     private static final float DASH_COOLDOWN = 0.6f;
     private static final float INVINCIBLE_DURATION = 0.34f;
+    private boolean hasDashed = false;
     
     //----------------- Knockback ---------------------
     private boolean knockedBack = false;
@@ -89,6 +91,8 @@ public class Player extends Entity implements ActionListener{
     
     // ------------------ Respawn Points ------------------
     public float spawnX, spawnY;
+    public String respawnRoomid;
+    public boolean benchInteracted = false;
     
     //-------------- States ---------------------
     private boolean onGround = true;
@@ -187,13 +191,14 @@ public class Player extends Entity implements ActionListener{
     
     private void dash(){
         if(!(getDir() == Direction.LEFT || getDir() == Direction.RIGHT)) return;
+        if(hasDashed) return; 
         
         dashing = true;
         dashTimer = DASH_DURATION;
         dashCooldownTimer = DASH_COOLDOWN;
         invincibleTimer = INVINCIBLE_DURATION;
         setVelX(getDir().getValue() * DASH_SPEED);
-        
+        hasDashed = true;
         String randomDashSound = (random.nextInt(2) == 1) ? "dash" : "superDash";
         SoundManager.playSfx(randomDashSound);
     }
@@ -246,6 +251,7 @@ public class Player extends Entity implements ActionListener{
     public void landOnGround() {
         onGround = true;
         jumps = 0;
+        hasDashed = false;
         setVelY(0);
         SoundManager.playSfx("playerHitGround");
     }
@@ -258,6 +264,7 @@ public class Player extends Entity implements ActionListener{
         this.onWall = true;
         this.wallOnRight = wallOnRight;
         this.onGround = false;
+        hasDashed = false;
     }
     /**
      * Called by the room once player stops touching the left or right wall.
@@ -522,6 +529,12 @@ public class Player extends Entity implements ActionListener{
     
     //------------ Respawn ----------------
     public void respawn() {
+        if(benchInteracted){
+            SaveData load = SaveData.readFromDisk();
+            spawnX = load.spawnX;
+            spawnY = load.spawnY;
+        }
+        
         setX(spawnX);
         setY(spawnY);
         setVelX(0);

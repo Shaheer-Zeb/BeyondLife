@@ -6,6 +6,7 @@ package entity;
 
 import core.Camera;
 import core.InputHandler;
+import entity.attack.SoulProjectile;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -18,7 +19,7 @@ public class Walker extends Entity {
     // ----------- Characteristics -----------------------
     public final static int WALKER_H = 210 / 3;
     public final static int WALKER_W = 140 / 3;
-    public final static int WALKER_HP = 30;
+    public final static int WALKER_HP = 20;
 
     //--------------------- Physics -------------------------------
     private final float WALK_SPEED = 220f;
@@ -104,13 +105,15 @@ public class Walker extends Entity {
 
     @Override
     public void draw(Graphics2D g, Camera cam) {
-        int drawX = (int)(getLeft() - cam.offsetX);
-        int drawY = (int)(getTop() - cam.offsetY);
-        
-        if (getDir() == Direction.LEFT)
-            g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
-        else if (getDir() == Direction.RIGHT)
-            g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
+        if(!isDead()){
+            int drawX = (int)(getLeft() - cam.offsetX);
+            int drawY = (int)(getTop() - cam.offsetY);
+
+            if (getDir() == Direction.LEFT)
+                g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
+            else if (getDir() == Direction.RIGHT)
+                g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
+        }
     }
     private void loadGif(){
         switch (type)

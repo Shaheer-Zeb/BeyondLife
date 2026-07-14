@@ -6,6 +6,7 @@ package state;
 
 import core.Camera;
 import core.InputHandler;
+import core.SaveData;
 import core.SoundManager;
 import entity.Player;
 import java.awt.Color;
@@ -13,7 +14,9 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import room.BossRoom;
 import room.GauntletRoom;
+import room.GauntletRoom2;
 import room.Room;
+import room.ShaftRoom;
 import room.VillageRoom;
 
 /**
@@ -120,8 +123,11 @@ public class PlayingState implements GameState {
     private void handleDeath(float dt) {
         deathTimer += dt;
         if (deathTimer >= DEATH_RESPAWN_DELAY) {
+            if(player.benchInteracted)
+                transitionToRoom(player.respawnRoomid);
+            else
+                currentRoom = new VillageRoom(input);
             player.respawn();
-            currentRoom = new VillageRoom(input);
             playerDead  = false;
             deathTimer  = 0f;
         }
@@ -257,6 +263,17 @@ public class PlayingState implements GameState {
             }
             case "gauntlet_room" -> {
                 currentRoom = new GauntletRoom(input);
+                player.setX(80);
+                player.setY(800 - player.getHeight());
+            }
+            case "shaft_room" -> {
+                currentRoom = new ShaftRoom(input);
+                player.setX(ShaftRoom.ROOM_W / 2 - (ShaftRoom.ROOM_W / 4));
+                player.setY(0 + player.getHeight() + 60);
+            }
+            
+            case "gauntlet2_room" -> {
+                currentRoom = new GauntletRoom2(input);
                 player.setX(80);
                 player.setY(800 - player.getHeight());
             }

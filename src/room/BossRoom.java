@@ -11,6 +11,7 @@ import core.SoundManager;
 import core.TileManager;
 import entity.Boss;
 import entity.Player;
+import entity.attack.Slash;
 import entity.attack.SoulProjectile;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -188,7 +189,7 @@ public class BossRoom extends Room {
             if (!slash.isActive()) continue;
 
             if (slash.overlapsRect(boss.getLeft(), boss.getTop(), boss.getWidth(), boss.getHeight())){
-                if(boss.takeDamage(5))
+                if(boss.takeDamage(Slash.DAMAGE))
                     player.gainSoul(Player.SOUL_PER_HIT);
                 
                 slash.deactivate();

@@ -9,7 +9,8 @@ import core.Camera;
 import core.InputHandler;
 import entity.Player;
 import entity.Walker;
-import java.awt.Color;
+import entity.attack.Slash;
+import entity.attack.SoulProjectile;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -24,13 +25,13 @@ import java.awt.image.BufferedImage;
 public class GauntletRoom extends Room {
 
     //------------------- Room Layout ----------------------
-    public static final float ROOM_W = 1600;
+    public static final float ROOM_W = 2000;
     public static final float ROOM_H = 1080;
     private static final int CEILING_Y = 60;
     private static final int ROOM_LEFT = 0;
     private static final int ROOM_RIGHT = (int) ROOM_W;
 
-    private static final String BOSS_ROOM_ID = "boss_room";
+    private static final String NEXT_ROOM_ID = "gauntlet2_room";
 
     //------------------- Platforms & Kill Zone ---------------
     private static final int PLATFORM_H = 40;
@@ -40,7 +41,8 @@ public class GauntletRoom extends Room {
         new Platform(80, 800, 220, PLATFORM_H),
         new Platform(420, 650, 200, PLATFORM_H),
         new Platform(760, 750, 200, PLATFORM_H),
-        new Platform(1100, 550, 240, PLATFORM_H)
+        new Platform(1100, 550, 240, PLATFORM_H),
+        new Platform(1500, 550, 240, PLATFORM_H)
     };
     
     private final int KILLZONE_HEIGHT = 40;
@@ -50,7 +52,7 @@ public class GauntletRoom extends Room {
     private final Walker walkerOnPlatform2;
     private final Walker walkerOnPlatform4;
 
-    //------------------- Door -------------
+    //------------------- Door ---------------------------
     private static final int DOOR_W = 128;
     private static final int DOOR_H = 128;
     private final int doorX;
@@ -84,12 +86,34 @@ public class GauntletRoom extends Room {
 
         Platform p2 = platforms[1];
         Platform p4 = platforms[3];
+        Platform p5 = platforms[4];
         
         walkerOnPlatform2 = new Walker( p2.getX() + 10, p2.getY() - Walker.WALKER_H, p2.getY(), input, p2.getX(), p2.getRight(), Walker.WalkerType.SLIME);
         walkerOnPlatform4 = new Walker( p4.getX() + 10, p4.getY() - Walker.WALKER_H, p4.getY(), input,p4.getX(), p4.getRight(), Walker.WalkerType.DINO);
         
-        doorX = p4.getRight() - DOOR_W - 20;
-        doorY = p4.getY() - DOOR_H + 17;
+        doorX = p5.getRight() - DOOR_W - 20;
+        doorY = p5.getY() - DOOR_H + 17;
+    }
+    
+    private void checkWalkerDamage(Player player, Walker walker) {
+        if (walker.isDead()) return;
+
+        for (var slash : player.getSlashes()) {
+            if (!slash.isActive()) continue;
+            if (slash.overlapsRect(walker.getLeft(), walker.getTop(), walker.getWidth(), walker.getHeight())) {
+                walker.takeDamage(Slash.DAMAGE);
+                player.gainSoul(Player.SOUL_PER_HIT);
+                slash.deactivate();
+            }
+        }
+
+        for (var proj : player.getProjectiles()) {
+            if (!proj.isActive()) continue;
+            if (proj.overlapsRect(walker.getLeft(), walker.getTop(), walker.getWidth(), walker.getHeight())) {
+                walker.takeDamage(SoulProjectile.DAMAGE);
+                proj.deactivate();
+            }
+        }
     }
 
     //---------------------- Update --------------------------
@@ -107,13 +131,17 @@ public class GauntletRoom extends Room {
 
         walkerOnPlatform2.setPlayerPosition(playerCenterX, playerFeetY);
         walkerOnPlatform4.setPlayerPosition(playerCenterX, playerFeetY);
-        walkerOnPlatform2.update(dt);
-        walkerOnPlatform4.update(dt);
+        
+        checkWalkerDamage(player, walkerOnPlatform2);
+        checkWalkerDamage(player, walkerOnPlatform4);
+        
+        if(!walkerOnPlatform2.isDead()) walkerOnPlatform2.update(dt);
+        if(!walkerOnPlatform4.isDead()) walkerOnPlatform4.update(dt);
 
         updatePlayerPhysics(player);
         checkKillZone(player);
-        checkWalkerContact(player, walkerOnPlatform2, cam);
-        checkWalkerContact(player, walkerOnPlatform4, cam);
+        if(!walkerOnPlatform2.isDead()) checkWalkerContact(player, walkerOnPlatform2, cam);
+        if(!walkerOnPlatform4.isDead()) checkWalkerContact(player, walkerOnPlatform4, cam);
         checkDoorTrigger(player);
         if (contactIframeTimer > 0f) {
             contactIframeTimer -= dt;
@@ -262,6 +290,6 @@ public class GauntletRoom extends Room {
 
     @Override
     public String getNextRoomId() {
-        return doorTriggered ? BOSS_ROOM_ID : null;
+        return doorTriggered ? NEXT_ROOM_ID : null;
     }
 }

@@ -38,7 +38,7 @@ public class Boss extends Entity implements ActionListener{
 
     //---------------- Health ------------------------ 
 
-    private final static int BOSS_MAX_HP = 30;
+    private final static int BOSS_MAX_HP = 150;
 
     //--------------------- Physics -------------------------------
     private final float GRAVITY = 1100f;

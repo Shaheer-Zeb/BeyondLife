@@ -26,6 +26,8 @@ public class Slash {
     
     private static final int REACH = 50;
     private int width, height;
+    
+    public static final int DAMAGE = 10;
 
     
     /**

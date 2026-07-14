@@ -26,14 +26,18 @@ import java.awt.image.BufferedImage;
  */
 public class Bench extends Entity{
 
-    private static final int benchW = 128;
-    private static final int benchH = 64 ;
+    public static final int benchW = 128;
+    public static final int benchH = 64 ;
     private BufferedImage image = AssetManager.getImage("/assets/rooms/village/bench.png");
     
     private static final float INTERACT_DISTANCE = 60f;
     
     private final InputHandler input;
     private boolean showPrompt = false;
+    
+    private float confirmationTimer = 0f;
+    private static final float CONFIRMATION_DURATION = 2.0f;
+    
     
     public Bench(float x, float y, InputHandler input){
         super(x, y, benchW, benchH, 1);
@@ -51,7 +55,6 @@ public class Bench extends Entity{
         showPrompt = (distance <= INTERACT_DISTANCE);
         
         if(showPrompt && input.isJustPressed(KeyEvent.VK_UP)){
-            System.out.println("Player interacted with bench");
             sit(player,  roomID);
             return true;
         }
@@ -62,25 +65,34 @@ public class Bench extends Entity{
     private void sit(Player player, String roomID){
         
         player.setHealth(player.getMaxHealth());
+        player.benchInteracted = true;
+        confirmationTimer = CONFIRMATION_DURATION;
         
         player.spawnX = this.getLeft() + (getWidth() - player.getWidth()) / 2f;
         player.spawnY = getBottom() - player.getHeight();
         player.cropSpriteToSit();
 
+        player.respawnRoomid = roomID;
+        
         // Write to disk
         SaveData data = new SaveData(player.spawnX, player.spawnY, roomID);
         data.writeToDisk();
 
+        
         SoundManager.playSfx("benchRest");
-        System.out.println("[Bench] Game saved.");
         
     }
     
     
     @Override
     public void draw(Graphics2D g, Camera cam){
+        
         drawBench(g, cam);
         drawPrompt(g, cam);
+        
+        if (confirmationTimer > 0f){
+            drawConfirmation(g, cam);
+        }
     }
     
     //------------------- Draw Helper -----------------
@@ -91,7 +103,7 @@ public class Bench extends Entity{
     }
     
     private void drawPrompt(Graphics2D g, Camera cam) {
-        if (!showPrompt) return;
+        if (!showPrompt || confirmationTimer > 0f) return;
 
         float drawX = getLeft() - cam.offsetX;
         float drawY = getTop()  - cam.offsetY;
@@ -119,7 +131,35 @@ public class Bench extends Entity{
         g.drawString(prompt, boxX + 6, boxY + 13);
     }
     
+    private void drawConfirmation(Graphics2D g, Camera cam) {
+
+        float drawX = getLeft() - cam.offsetX;
+        float drawY = getTop()  - cam.offsetY;
+
+        String prompt = "Game Saved";
+        g.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        int textW = g.getFontMetrics().stringWidth(prompt);
+
+        int boxX = (int)(drawX + benchW / 2f - textW / 2f) - 6;
+        int boxY = (int) drawY - 30;
+        int boxW = textW + 12;
+        int boxH = 18;
+
+        // Box background
+        g.setColor(Color.BLACK);
+        g.fillRoundRect(boxX, boxY, boxW, boxH, 6, 6);
+
+        // Box outline
+        g.setColor(Color.WHITE);
+        g.drawRoundRect(boxX, boxY, boxW, boxH, 6, 6);
+
+        // Text
+        g.drawString(prompt, boxX + 6, boxY + 13);
+    }
+    
     @Override
-    public void update(float deltaTime) {/* Konsa bench bhagtay hoai dekha hai? 😛*/}
+    public void update(float deltaTime) {/* Konsa bench bhagtay hoai dekha hai? 😛*/
+        if (confirmationTimer > 0f) confirmationTimer -= deltaTime;
+    }
     
 }

@@ -46,8 +46,7 @@ public class VillageRoom extends Room {
     //------------------- Door ----------------------------
     private static final int DOOR_W = 128;
     private static final int DOOR_H = 128;
-//    private static final int DOOR_X = ROOM_RIGHT - DOOR_W;
-    private static final int DOOR_X = ROOM_LEFT;
+    private static final int DOOR_X = ROOM_RIGHT - DOOR_W;
     private static final int DOOR_Y = GROUND_Y - DOOR_H + 17;
     private static final String NEXT_ROOM_ID  = "gauntlet_room";
     private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
@@ -154,6 +153,7 @@ public class VillageRoom extends Room {
         float playerCenterX = player.getLeft() + player.getWidth() / 2f;
         float playerCenterY = player.getTop() + player.getHeight() / 2f;
 
+        bench.update(dt);
         bench.updateInteraction(player, id);
 
         faseeh.updateInteraction(playerCenterX, playerCenterY);
