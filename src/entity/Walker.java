@@ -7,7 +7,8 @@ package entity;
 import core.Camera;
 import core.InputHandler;
 import java.awt.Graphics2D;
-import java.awt.Color;
+import java.awt.Image;
+import java.awt.Toolkit;
 
 /**
  *
@@ -33,13 +34,24 @@ public class Walker extends Entity {
     // Patrol values to enforce clamping
     private final int patrolLeftBoundary;
     private final int patrolRightBoundary;
-
-    public Walker(float x, float y, int platformY, InputHandler input, int patrolLeftBoundary, int patrolRightBoundary) {
+    
+    // ---------------- Fuckin GIF Handling ----------------------
+    private Image walkerGif;
+    
+    public static enum WalkerType
+    {
+        SLIME, DINO
+    }
+    private WalkerType type;
+    public Walker(float x, float y, int platformY, InputHandler input, int patrolLeftBoundary, int patrolRightBoundary, WalkerType type) {
         super(x, y, WALKER_W, WALKER_H, WALKER_HP);
         this.platformY = platformY;
         this.input = input;
         this.patrolLeftBoundary = patrolLeftBoundary;
         this.patrolRightBoundary = patrolRightBoundary;
+        this.type = type;
+       
+        loadGif();
     }
 
     public void setPlayerPosition(float playerX, float playerY) {
@@ -92,5 +104,19 @@ public class Walker extends Entity {
 
     @Override
     public void draw(Graphics2D g, Camera cam) {
+        int drawX = (int)(getLeft() - cam.offsetX);
+        int drawY = (int)(getTop() - cam.offsetY);
+        
+        if (getDir() == Direction.LEFT)
+            g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
+        else if (getDir() == Direction.RIGHT)
+            g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
+    }
+    private void loadGif(){
+        switch (type)
+        {
+            case SLIME -> walkerGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/enemies/slimer.gif");
+            case DINO -> walkerGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/enemies/dino.gif");
+        }
     }
 }
