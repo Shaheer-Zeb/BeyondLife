@@ -19,7 +19,7 @@ public class Slash {
     private final int playerH;
     private final Direction dir;
     
-    private static final float LIFETIME = 0.15f;
+    private static final float LIFETIME = 0.30f;
     private boolean active = true;
     
     private float timer = LIFETIME;
@@ -49,7 +49,7 @@ public class Slash {
        switch (dir) {
            case RIGHT, LEFT -> {
                width  = (int)(1.7f * playerW);
-               height = (int)(0.6f * playerH);
+               height = (int)(1.5f * playerH);
            }
 
            case UP, DOWN -> {
@@ -80,11 +80,11 @@ public class Slash {
        switch (dir) {
            case RIGHT -> {
                x = centerX + REACH - width / 2f;
-               y = centerY - height / 2f;
+               y = centerY - height / 2f - playerH / 5;
            }
            case LEFT -> {
                x = centerX - REACH - width / 2f;
-               y = centerY - height / 2f;
+               y = centerY - height / 2f - playerH / 5;
            }
            case UP -> {
                x = centerX - width / 2f;
@@ -132,6 +132,13 @@ public class Slash {
     }
     
     //---------- Draw Helper ---------------
+    /**
+     * 
+     * Since sprites were used independently drawing the slash was of no use
+     * 
+     * @param g
+     * @param cam 
+     */
     private void drawSlash(Graphics2D g, Camera cam){
         float drawX = x - cam.offsetX;
         float drawY = y - cam.offsetY;

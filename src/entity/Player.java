@@ -480,6 +480,11 @@ public class Player extends Entity implements ActionListener{
     private void drawPlayer(Graphics2D g, Camera cam) {
         int drawX = (int)(getLeft() - cam.offsetX + DRAW_OFFSET_X);
         int drawY = (int)(getTop() - cam.offsetY + DRAW_OFFSET_Y);
+
+//        int drawX = (int)(getLeft() - cam.offsetX);
+//        int drawY = (int)(getTop() - cam.offsetY);
+//    
+//        g.drawRect(drawX, drawY, getWidth(), getHeight());
         
         // Body color — white when invincible/dashing, normal otherwise
         float alpha = 0.7f;

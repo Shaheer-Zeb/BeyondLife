@@ -6,7 +6,6 @@ package entity;
 
 import core.Camera;
 import core.InputHandler;
-import entity.attack.SoulProjectile;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -36,7 +35,10 @@ public class Walker extends Entity {
     private final int patrolLeftBoundary;
     private final int patrolRightBoundary;
     
-    // ---------------- Fuckin GIF Handling ----------------------
+    private static final float DAMAGE_MAX_TIME = 0.8f;
+    private float dmgTimer = 0;
+    
+    // ---------------- GIF Handling ----------------------
     private Image walkerGif;
     
     public static enum WalkerType
@@ -95,7 +97,20 @@ public class Walker extends Entity {
     }
 
     @Override
+    public boolean takeDamage(int amount) {
+        dmgTimer = DAMAGE_MAX_TIME;
+        return super.takeDamage(amount);
+    }
+    
+
+    @Override
     public void update(float deltaTime) {
+        
+        if(dmgTimer > 0){ 
+            dmgTimer -= deltaTime;
+            setX(playerX < getLeft() ? getLeft() + 10 : getLeft() - 10);
+        }
+        
         if (playerLandedOnPlatform()) {
             chasePlayer(deltaTime);
         } else {
@@ -108,12 +123,14 @@ public class Walker extends Entity {
         if(!isDead()){
             int drawX = (int)(getLeft() - cam.offsetX);
             int drawY = (int)(getTop() - cam.offsetY);
-
             if (getDir() == Direction.LEFT)
                 g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
             else if (getDir() == Direction.RIGHT)
                 g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
+            
         }
+        
+        
     }
     private void loadGif(){
         switch (type)
