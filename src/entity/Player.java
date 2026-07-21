@@ -43,7 +43,7 @@ public class Player extends Entity implements ActionListener{
     
     //------------ Characteristics --------------------
     private static final int HITBOX_WIDTH  = 42;
-    private static final int HITBOX_HEIGHT = 78;
+    private static final int HITBOX_HEIGHT = 68;
     
     //------------- Physics ------------------
     private static final float MOVE_SPEED = 220f;
@@ -119,9 +119,9 @@ public class Player extends Entity implements ActionListener{
     private final int spriteChangeDelay = 125;
     private final Timer spriteTimer;
     private static final int DRAW_OFFSET_X = -75; // I've got to this bullshit because the spritesheet has extra padding between each sprite, so we've to separate the player collision (WIDTH and HEIGHT) and the sprite drawing width and height
-    private static final int DRAW_OFFSET_Y = -174;
+    private static final int DRAW_OFFSET_Y = -154;
     private static final int DRAW_WIDTH = 192;
-    private static final int DRAW_HEIGHT = 254;
+    private static final int DRAW_HEIGHT = 224;
     
     private final InputHandler input;
     private final Random random = new Random();
@@ -191,7 +191,7 @@ public class Player extends Entity implements ActionListener{
     
     private void dash(){
         if(!(getDir() == Direction.LEFT || getDir() == Direction.RIGHT)) return;
-        if(hasDashed) return; 
+//        if(hasDashed) return; aah, why do we need this?
         
         dashing = true;
         dashTimer = DASH_DURATION;
@@ -199,8 +199,7 @@ public class Player extends Entity implements ActionListener{
         invincibleTimer = INVINCIBLE_DURATION;
         setVelX(getDir().getValue() * DASH_SPEED);
         hasDashed = true;
-        String randomDashSound = (random.nextInt(2) == 1) ? "dash" : "superDash";
-        SoundManager.playSfx(randomDashSound);
+        SoundManager.playSfx("dash");
     }
     
     //--------------- Geavity -----------------------
@@ -264,6 +263,7 @@ public class Player extends Entity implements ActionListener{
         this.onWall = true;
         this.wallOnRight = wallOnRight;
         this.onGround = false;
+        dashing = false;
         hasDashed = false;
     }
     /**
@@ -332,8 +332,8 @@ public class Player extends Entity implements ActionListener{
         
         // Makes the player jump a little and casts the projectile
         if(input.isJustPressed(KeyEvent.VK_C) && soulProjectileCooldownTimer <= 0f && soul >= SOUL_PER_CAST ){
-            setVelY(JUMP_FORCE - 100);
-            onGround = false;
+//            setVelY(JUMP_FORCE - 100);
+//            onGround = false;
             castProjectile();
         }
     }
@@ -402,7 +402,7 @@ public class Player extends Entity implements ActionListener{
             s.draw(g, cam);
 
         for (SoulProjectile p : projectiles)
-            p.draw(g, cam);
+            p.draw(g, cam, getDir());
         
     }
     /**
@@ -427,22 +427,22 @@ public class Player extends Entity implements ActionListener{
      * mentions the row number and the number of frames for each player state sprite.
      */
     private void handleSpriteRow(){
-//        if (isTurning)
-//            spriteRowNumber = SPRITEACTION.TURNAROUND.ordinal();
-        if (onGround)
-            spriteRowNumber = SPRITEACTION.IDLE.ordinal();
-        if (dashing)
-            spriteRowNumber = SPRITEACTION.SLIDE.ordinal();
-        if (isRunning && !dashing && onGround)
-            spriteRowNumber = SPRITEACTION.RUN.ordinal();
         if (isDead())
             spriteRowNumber = SPRITEACTION.DEATH.ordinal();
-        if (onWall && !onGround && getVelY() > 0)
-            spriteRowNumber = SPRITEACTION.WALLSLIDE.ordinal();
-        else if (!onGround && !onWall && !isFalling)
-            spriteRowNumber = SPRITEACTION.JUMP.ordinal();
-        if (isSlashing)
+        else if (isSlashing)
             spriteRowNumber = SPRITEACTION.ATTACK.ordinal();
+        else if (onWall && !onGround)
+            spriteRowNumber = SPRITEACTION.WALLSLIDE.ordinal();
+        else if (dashing)
+            spriteRowNumber = SPRITEACTION.SLIDE.ordinal();
+        else if (!onGround && !onWall && isFalling)
+            spriteRowNumber = SPRITEACTION.FALL.ordinal();
+        else if (!onGround && !onWall)
+            spriteRowNumber = SPRITEACTION.JUMP.ordinal();
+        else if (isRunning)
+            spriteRowNumber = SPRITEACTION.RUN.ordinal();
+        else
+            spriteRowNumber = SPRITEACTION.IDLE.ordinal();
     }
     /**
      * Handles the sprite repetition of each spritesheet's row. For example, the first (attack) row has 6 frames,
@@ -454,7 +454,7 @@ public class Player extends Entity implements ActionListener{
                 if (sheetX > 4 * spriteWidth)
                     isSlashing = false;
             }
-            case 1 -> sheetX = (sheetX > 10 * spriteWidth) ? 9 * spriteWidth : sheetX; // I didn't reset it to the 0th (1st) frame, because I don't want the death animation to repeat. You don't die twice, do you?
+            case 1 -> sheetX = (sheetX > 9 * spriteWidth) ? 9 * spriteWidth : sheetX; // I didn't reset it to the 0th (1st) frame, because I don't want the death animation to repeat. You don't die twice, do you?
             case 2 -> sheetX = (sheetX > 2 * spriteWidth) ? 0 : sheetX;
             case 3 -> sheetX = (sheetX > 9 * spriteWidth) ? 0 : sheetX;
             case 4 -> sheetX = (sheetX > 2 * spriteWidth) ? 0 : sheetX;

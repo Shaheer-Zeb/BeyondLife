@@ -8,24 +8,31 @@ import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
 import core.SoundManager;
+import entity.attack.BossBolt;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.Timer;
 
 /**
  * The boss enemy
  *
  *  Dormant - The boss is dormant -> fight begins once challenged
- *  Patrol - Moves towards the player
- *  Slam - Jumps and slams the ground creating a shockwave
+ *  Patrol - Moves towards the player, then randomly picks its next attack
+ *  Leap - Jumps and slams the ground creating a shockwave
+ *  Slam - Ground slam landing recovery before the beam fires
+ *  Charge - Fast horizontal dash lunge toward the player
+ *  Barrage - Fires a volley of ranged bolts at the player
  *  Vulnerable - can take damage during this state
  * 
  * @author EDEN COMPUTERS
@@ -46,7 +53,7 @@ public class Boss extends Entity implements ActionListener{
     private final int groundY;
     private boolean onGround = false;
 
-    private enum State { DORMANT, PATROL, LEAP, SLAM, VULNERABLE }
+    private enum State { DORMANT, PATROL, LEAP, SLAM, CHARGE, BARRAGE, VULNERABLE }
     private State state = State.DORMANT;
 
     //------------------- Fight trigger --------------------------
@@ -60,6 +67,14 @@ public class Boss extends Entity implements ActionListener{
      */
     private enum LeapPhase { RISING, HANGING, ARCING }
     private LeapPhase leapPhase = LeapPhase.RISING;
+
+    /** Sub-phases of the {@code CHARGE} attack. */
+    private enum ChargePhase { TELEGRAPH, DASHING, RECOVER }
+    private ChargePhase chargePhase = ChargePhase.TELEGRAPH;
+
+    /** Sub-phases of the {@code BARRAGE} attack. */
+    private enum BarragePhase { TELEGRAPH, FIRING, RECOVER }
+    private BarragePhase barragePhase = BarragePhase.TELEGRAPH;
 
     //-------------------- Patrol -----------------------
     private float patrolTimer = 0;
@@ -80,6 +95,30 @@ public class Boss extends Entity implements ActionListener{
     private final float ARC_DURATION = 0.20f;
 
     private float leapTargetX = 0f;
+
+    //----------------- Charge attack tuning -------------------------
+    private float chargeTimer = 0;
+    private final float CHARGE_TELEGRAPH_DURATION = 0.5f; // wind-up before the dash
+    private final float CHARGE_DURATION = 0.6f;            // max dash time before stopping
+    private final float CHARGE_RECOVER_DURATION = 0.4f;
+    private final float CHARGE_SPEED = 900f;
+    private float chargeTargetX = 0f;
+    private Image dashEffectGif = AssetManager.getGif("/assets/sprites/boss/bossDash.gif");
+    private final int dashGifWidth = 32 * 6, dashGifHeight = 32 * 6;
+
+    //----------------- Barrage attack tuning -------------------------
+    private float barrageTimer = 0;
+    private final float BARRAGE_TELEGRAPH_DURATION = 0.4f;
+    private final float BARRAGE_RECOVER_DURATION = 0.5f;
+    private final float BOLT_SPEED = 500f;
+    private final float BOLT_INTERVAL = 0.25f;
+    private final int BOLT_COUNT = 3;
+    private int boltsFired = 0;
+    private float boltFireCooldown = 0;
+    private final List<BossBolt> bolts = new ArrayList<>();
+    private Image boltGif = AssetManager.getGif("/assets/sprites/boss/bossBolt.gif");
+ 
+    
 
     //----------------- Vulnerable window --------------------------
     private float vulnerableTimer = 0;
@@ -127,12 +166,12 @@ public class Boss extends Entity implements ActionListener{
         sheetY = spriteRowNumber * SPRITE_HEIGHT;
     }
     private void handleSpriteRow(){
-        if (null != state)
+        if (state != null)
             switch (state) 
             {
                 case DORMANT, VULNERABLE -> spriteRowNumber = SPRITEACTION.IDLE.ordinal();
-                case PATROL -> spriteRowNumber = SPRITEACTION.FLYING.ordinal();
-                case SLAM -> spriteRowNumber = SPRITEACTION.ATTACK.ordinal();  
+                case PATROL, CHARGE -> spriteRowNumber = SPRITEACTION.FLYING.ordinal();
+                case SLAM, BARRAGE -> spriteRowNumber = SPRITEACTION.ATTACK.ordinal();
             }
         if (isDead())
             spriteRowNumber = SPRITEACTION.DEATH.ordinal();
@@ -167,10 +206,19 @@ public class Boss extends Entity implements ActionListener{
         else if (patrolDir == 1)
             g.drawImage(spriteFrame, (int)drawX + BOSS_W, (int)drawY, -BOSS_W, BOSS_H, null);
         g.setComposite(originalComposite);
-        
+        if (chargePhase == ChargePhase.DASHING)
+            drawDashEffect(g, cam);
         if(state != State.DORMANT)
             drawHealthBar(g, drawX, drawY);
 
+    }
+    private void drawDashEffect(Graphics2D g, Camera cam){
+        int drawX = (int)(((patrolDir == 1) ? getLeft() - dashGifWidth + 20 : getRight() - 20) - cam.offsetX);
+        int drawY = (int)(groundY - dashGifHeight - cam.offsetY);
+        if (patrolDir == -1)
+            g.drawImage(dashEffectGif, drawX, drawY, dashGifWidth, dashGifHeight, null);
+        else if (patrolDir == 1)
+            g.drawImage(dashEffectGif, drawX + dashGifWidth, drawY, -dashGifWidth, dashGifHeight, null);
     }
     private void drawChallengeOption(Graphics2D g, float drawX, float drawY){
         float dist = Math.abs((playerX) - (getLeft() + BOSS_W / 2f));
@@ -218,12 +266,9 @@ public class Boss extends Entity implements ActionListener{
 
     /**
      * Attempts to start the boss fight, Mantis-Lords-style: the boss
-     * sits inert in Dormant until the player walks within
-<<<<<<< HEAD
-=======
-     * 
+     * sits inert in Dormant until the player walks within range and
+     * presses UP to challenge it.
      *
->>>>>>> main
      * @param playerX player's current x position
      * @return true if this call is what started the fight
      */
@@ -270,6 +315,32 @@ public class Boss extends Entity implements ActionListener{
         return hitsRight || hitsLeft;
     }
 
+    /**
+     * Checks all active barrage bolts against the given player hit box.
+     * Any bolt that overlaps is consumed (deactivated) on contact.
+     *
+     * @param px player x
+     * @param py player y
+     * @param pw player hit box width
+     * @param ph player hit box height
+     * @return true if at least one bolt hit the player this call
+     */
+    public boolean boltHits(float px, float py, float pw, float ph) {
+        boolean hit = false;
+        for (BossBolt b : bolts) {
+            if (!b.isActive()) continue;
+            float bx = b.getX() - BossBolt.SIZE / 2f;
+            float by = b.getY() - BossBolt.SIZE / 2f;
+            boolean overlap = px < bx + BossBolt.SIZE && px + pw > bx
+                            && py < by + BossBolt.SIZE && py + ph > by;
+            if (overlap) { 
+                b.setActive(false);
+                hit = true;
+            }
+        }
+        return hit;
+    }
+
     /** 
      * Applies gravity (boosted while slam-falling) and resolves ground contact.
      */
@@ -309,14 +380,24 @@ public class Boss extends Entity implements ActionListener{
         }
     }
 
-    /** Walks toward the player and counts down to the next leap. */
+    /** Walks toward the player and counts down to the next attack. */
     private void updatePatrol(float dt, float playerX) {
         patrolDir = (playerX > getLeft()) ? 1 : -1;
         setX(getLeft() + WALK_SPEED * patrolDir * dt);
         patrolTimer += dt;
         if (patrolTimer >= PATROL_DURATION) {
             patrolTimer = 0;
-            enterLeap(playerX);
+            chooseNextAttack(playerX);
+        }
+    }
+
+    /** Randomly selects the boss's next attack once patrol time is up. */
+    private void chooseNextAttack(float playerX) {
+        int roll = (int) (Math.random() * 3);
+        switch (roll) {
+            case 0 -> enterLeap(playerX);
+            case 1 -> enterCharge(playerX);
+            default -> enterBarrage();
         }
     }
 
@@ -376,6 +457,116 @@ public class Boss extends Entity implements ActionListener{
     private void updateSlam(float dt) {
         slamTimer += dt;
         if (slamTimer >= SLAM_DURATION) enterVulnerable();
+    }
+
+    /** Begins the charge attack: a brief telegraph before dashing at the player. */
+    private void enterCharge(float playerX) {
+        state = State.CHARGE;
+        chargePhase = ChargePhase.TELEGRAPH;
+        chargeTimer = 0;
+        chargeTargetX = playerX;
+        setVelX(0);
+    }
+
+    /**
+     * Drives the charge's three sub-phases: a wind-up telegraph, the fast
+     * horizontal dash itself (stopped by a wall or a time limit), then a
+     * short recovery before the boss becomes vulnerable.
+     */
+    private void updateCharge(float dt) {
+        switch (chargePhase) {
+            case TELEGRAPH -> {
+                chargeTimer += dt;
+                if (chargeTimer >= CHARGE_TELEGRAPH_DURATION) {
+                    chargePhase = ChargePhase.DASHING;
+                    chargeTimer = 0;
+                    float dir = (chargeTargetX > getLeft()) ? 1 : -1;
+                    patrolDir = (int) dir;
+                    setVelX(CHARGE_SPEED * dir);
+                }
+            }
+            case DASHING -> {
+                chargeTimer += dt;
+                setX(getLeft() + getVelX() * dt);
+                boolean hitWall = getLeft() <= roomLeft || getLeft() >= roomRight - BOSS_W;
+                boolean timeUp = chargeTimer >= CHARGE_DURATION;
+                if (hitWall || timeUp) {
+                    setX(Math.max(roomLeft, Math.min(getLeft(), roomRight - BOSS_W)));
+                    setVelX(0);
+                    chargePhase = ChargePhase.RECOVER;
+                    chargeTimer = 0;
+                    SoundManager.playSfx("bossDash");
+                }
+            }
+            case RECOVER -> {
+                chargeTimer += dt;
+                if (chargeTimer >= CHARGE_RECOVER_DURATION) enterVulnerable();
+            }
+        }
+    }
+
+    /** Begins the barrage attack: a brief telegraph before firing a volley of bolts. */
+    private void enterBarrage() {
+        state = State.BARRAGE;
+        barragePhase = BarragePhase.TELEGRAPH;
+        barrageTimer = 0;
+        boltsFired = 0;
+        setVelX(0);
+    }
+
+    /**
+     * Drives the barrage's three sub-phases: a wind-up telegraph, firing
+     * {@code BOLT_COUNT} bolts spaced {@code BOLT_INTERVAL} apart, then a
+     * short recovery before the boss becomes vulnerable.
+     */
+    private void updateBarrage(float dt) {
+        switch (barragePhase) {
+            case TELEGRAPH -> {
+                barrageTimer += dt;
+                if (barrageTimer >= BARRAGE_TELEGRAPH_DURATION) {
+                    barragePhase = BarragePhase.FIRING;
+                    boltFireCooldown = 0;
+                }
+            }
+            case FIRING -> {
+                boltFireCooldown -= dt;
+                if (boltFireCooldown <= 0 && boltsFired < BOLT_COUNT) {
+                    fireBolt();
+                    boltsFired++;
+                    boltFireCooldown = BOLT_INTERVAL;
+                }
+                if (boltsFired >= BOLT_COUNT) {
+                    barragePhase = BarragePhase.RECOVER;
+                    barrageTimer = 0;
+                }
+            }
+            case RECOVER -> {
+                barrageTimer += dt;
+                if (barrageTimer >= BARRAGE_RECOVER_DURATION) enterVulnerable();
+            }
+        }
+    }
+
+    /** Spawns a single bolt from the boss's center, aimed toward the player's side. */
+    private void fireBolt() {
+        float originX = getLeft() + BOSS_W / 2f;
+        float originY = getTop() + BOSS_H / 2f;
+        float dir = (playerX > originX) ? 1 : -1;
+        patrolDir = (int) dir;
+        bolts.add(new BossBolt(originX, originY, BOLT_SPEED * dir));
+        SoundManager.playSfx("fireBolt"); // swap for a dedicated bolt sfx if one gets added
+    }
+
+    /** Advances all active bolts and culls any that have left the arena. */
+    private void updateBolts(float dt) {
+        for (BossBolt b : bolts) {
+            if (!b.isActive()) continue;
+            b.setX(b.getX() + b.getVx() * dt );
+            if (b.getX() < roomLeft - BossBolt.SIZE || b.getX() > roomRight + BossBolt.SIZE) {
+                b.setActive(false);
+            }
+        }
+        bolts.removeIf(b -> !b.isActive());
     }
 
     private void enterVulnerable() {
@@ -439,10 +630,13 @@ public class Boss extends Entity implements ActionListener{
             case PATROL -> updatePatrol(deltaTime, playerX);
             case LEAP -> updateLeap(deltaTime);
             case SLAM -> updateSlam(deltaTime);
+            case CHARGE -> updateCharge(deltaTime);
+            case BARRAGE -> updateBarrage(deltaTime);
             case VULNERABLE -> updateVulnerable(deltaTime);
         }
 
         if (beamActive) updateBeam(deltaTime);
+        updateBolts(deltaTime);
         
     }
 
@@ -453,6 +647,8 @@ public class Boss extends Entity implements ActionListener{
         
         if(beamActive)
             drawBeam(g, cam);
+
+        drawBolts(g, cam);
     }
     
     //--------------- Draw Helpers ---------------
@@ -474,6 +670,20 @@ public class Boss extends Entity implements ActionListener{
         g.drawImage(shockBeamImage, lx, oy, shockBeamImageWidth, shockBeamImageHeight, null);
 
         g.setStroke(new BasicStroke(1f));
+    }
+
+    /** Draws every active barrage bolt as a simple glowing orb. */
+    private void drawBolts(Graphics2D g, Camera cam) {
+        for (BossBolt b : bolts) {
+            if (!b.isActive()) continue;
+            int size = BossBolt.SIZE;
+            int drawX = (int) (b.getX() - size / 2f - cam.offsetX);
+            int drawY = (int) (b.getY() - size / 2f - cam.offsetY);
+            if (patrolDir == 1)
+                g.drawImage(boltGif, drawX, drawY, size, size, null);
+            else if (patrolDir == -1)
+                g.drawImage(boltGif, drawX + size, drawY, -size, size, null);
+        }
     }
     
     

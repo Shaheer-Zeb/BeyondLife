@@ -77,17 +77,20 @@ public class SoulProjectile {
                y + RADIUS * 2 > ry;
     }
     
-    public void draw(Graphics2D g, Camera cam){
+    public void draw(Graphics2D g, Camera cam, Direction playerDir){
         if(!active)
             return;
         
-        drawSoulProjectile(g, cam);
+        drawSoulProjectile(g, cam, playerDir);
     }
     
     //------------ Draw Helpers ------------
-    private void drawSoulProjectile(Graphics2D g, Camera cam){
+    private void drawSoulProjectile(Graphics2D g, Camera cam, Direction playerDir){
         int drawX = (int)(x - cam.offsetX);
         int drawY = (int)(y - cam.offsetY);
-        g.drawImage(image, drawX, drawY, RADIUS * 2, RADIUS * 2, null);
+        if (playerDir == Direction.RIGHT)
+            g.drawImage(image, drawX, drawY, RADIUS * 2, RADIUS * 2, null);
+        else if (playerDir == Direction.LEFT)
+            g.drawImage(image, drawX + RADIUS * 2, drawY, -RADIUS * 2, RADIUS * 2, null);
     }
 }

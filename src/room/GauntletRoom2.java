@@ -3,6 +3,7 @@ package room;
 import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
 import entity.Player;
 import entity.Walker;
 import entity.attack.Slash;
@@ -42,7 +43,7 @@ public class GauntletRoom2 extends Room {
     private final int doorX;
     private final int doorY;
     private boolean doorTriggered = false;
-    private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
+    private Image doorPortalGif = AssetManager.getGif("/assets/rooms/village/doorPortal1.gif");
 
     //------------------- Checkpoint (respawn point) ------------
     private float lastSafeX;
@@ -87,32 +88,48 @@ public class GauntletRoom2 extends Room {
         // Initial checkpoint = spawn platform, not a per-frame guess.
         lastSafeX = startX;
         lastSafeY = startY - PLATFORM_H;
+        
+        SoundManager.stopAllSfx();
+        SoundManager.playMusic("gauntlet2");
+        SoundManager.setMusicVolume(-10);
     }
+    
+    
+    private static final float[][] PLATFORM_LAYOUT = {
+        {0.05f,  150, 220, 0, 0},
+        {0.60f,  340, 210, 1, 0},
+        {0.15f,  530, 200, 0, 0},
+        {0.65f,  720, 190, 1, 1},
+        {0.75f,  910, 180, 0, 0}, 
+        {0.10f, 1100, 180, 1, 0},
+        {0.55f, 1290, 170, 0, 0},
+        {0.20f, 1480, 170, 1, 1},
+        {0.70f, 1670, 160, 0, 0},
+        {0.05f, 1860, 160, 1, 0},
+        {0.60f, 2050, 150, 0, 0},
+        {0.15f, 2240, 150, 1, 1},
+        {0.65f, 2430, 140, 0, 0},
+        {0.25f, 2620, 140, 1, 0},
+        {0.55f, 2810, 130, 0, 0},
+        {0.10f, 3000, 130, 1, 1},
+        {0.50f, 3190, 120, 0, 0},
+        {0.20f, 3380, 120, 1, 0},
+        {0.45f, 3570, 130, 0, 0},
+        {0.30f, 3750, 190, 1, 1},
+    };
 
-    /**
-     * Scatters platforms (and every other one, a Walker) down the shaft.
-     * Each platform gets its own random slot, split into vertical bands so
-     * there's always a reachable gap between one platform and the next
-     * instead of everything landing on the same random spot.
-     */
+
     public void initPlatforms() {
-        Random rand = new Random();
-
-        float usableHeight = ROOM_H - KILLZONE_HEIGHT - 60; 
-        float bandHeight = usableHeight / PLATFORM_COUNT;
-
-        for (int i = 0; i < PLATFORM_COUNT; i++) {
-            int platformWidth = rand.nextInt(150, 250);
-            int platformX = rand.nextInt(0, (int) (ROOM_W - platformWidth));
-
-            float bandTop = 60 + i * bandHeight;
-            float bandBottom = bandTop + bandHeight;
-            int platformY = (int) (bandTop + rand.nextFloat() * (bandBottom - bandTop));
+        for (float[] def : PLATFORM_LAYOUT) {
+            int platformWidth = (int) def[2];
+            int platformX = (int) (def[0] * (ROOM_W - platformWidth));
+            int platformY = (int) def[1];
 
             Platform platform = new Platform(platformX, platformY, platformWidth, PLATFORM_H);
             platforms.add(platform);
 
-            if (i % 2 == 0) {
+            if (def[3] == 1) {
+                Walker.WalkerType type = def[4] == 0 ? Walker.WalkerType.DINO : Walker.WalkerType.SLIME;
                 walkers.add(new Walker(
                         platform.getX() + 10,
                         platform.getY() - Walker.WALKER_H,
@@ -120,7 +137,7 @@ public class GauntletRoom2 extends Room {
                         input,
                         platform.getX(),
                         platform.getRight(),
-                        rand.nextInt(2) == 0 ? Walker.WalkerType.DINO : Walker.WalkerType.SLIME));
+                        type));
             }
         }
     }
@@ -147,8 +164,7 @@ public class GauntletRoom2 extends Room {
         for (Walker w : walkers) {
             w.setPlayerPosition(playerCenterX, playerFeetY);
             checkWalkerDamage(player, w);
-
-            if (!w.isDead()) {
+            if (!w.isRemovable()){
                 w.update(dt);
                 checkWalkerContact(player, w, cam);
             }
@@ -173,7 +189,8 @@ public class GauntletRoom2 extends Room {
         drawDoor(g, cam);
 
         for (Walker w : walkers) {
-            w.draw(g, cam);
+            if (!w.isRemovable()) 
+                w.draw(g, cam);
         }
     }
 
@@ -223,7 +240,12 @@ public class GauntletRoom2 extends Room {
             player.getTop() < doorY + DOOR_H &&
             player.getTop() + player.getHeight() > doorY;
 
-        if (overlapping) doorTriggered = true;
+        if (overlapping)
+        {
+            doorTriggered = true;
+            SoundManager.playSfx("doorOpen");
+        }
+        
     }
 
     //------------------- Room Transition --------------------

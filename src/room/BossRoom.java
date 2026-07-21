@@ -13,8 +13,13 @@ import entity.Boss;
 import entity.Player;
 import entity.attack.Slash;
 import entity.attack.SoulProjectile;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import javax.swing.Timer;
 
 /**
  * The boss arena room.
@@ -34,7 +39,7 @@ import java.awt.image.BufferedImage;
  *
  * @author EDEN COMPUTERS
  */
-public class BossRoom extends Room {
+public class BossRoom extends Room implements ActionListener{
 
     //------------------- Room Layout ----------------------
     public static final int ROOM_W = 1400;
@@ -74,6 +79,11 @@ public class BossRoom extends Room {
     private BufferedImage pines = AssetManager.getImage("/assets/rooms/boss/background/pines.png");
     private BufferedImage birds = AssetManager.getImage("/assets/rooms/boss/background/birds.png");
     
+    // ----------------- Timer to Defeat the Boss -----------------------------
+    private final int TIME_LIMIT = 59;
+    private int currentElapsedTime;
+    private Timer limitTimer;
+    private boolean isTimeUp;
     /**
      * Creates the boss room, spawning the boss centered on the arena floor.
      *
@@ -87,6 +97,8 @@ public class BossRoom extends Room {
         float bossStartY = GROUND_Y - Boss.BOSS_H;
 
         boss = new Boss(bossStartX, bossStartY, GROUND_Y, input, ROOM_LEFT, ROOM_RIGHT);
+        
+        limitTimer = new Timer(1000, this);
         
         SoundManager.stopAllSfx();
         SoundManager.playMusic("boss");
@@ -110,6 +122,7 @@ public class BossRoom extends Room {
         if(boss.tryStart(playerCenterX) && !challenged){
             challenged = true;
             cam.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
+            limitTimer.start();
         }
 
         boss.setPlayerPosition(playerCenterX);
@@ -126,14 +139,23 @@ public class BossRoom extends Room {
             checkProjectileHits(player);
             checkBeamHits(player);
             checkBodyContact(player, cam);
+            checkBoltHits(player);
 
             if (boss.isDead()){
                 cam.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
                 bossDefeated = true;
             }
         }
+        checkLimitTimer(player);
     }
-
+    /**
+     * Checks whether the time's up. And kills the player if it is.
+     * @param player 
+     */
+    private void checkLimitTimer(Player player){
+        if (currentElapsedTime >= TIME_LIMIT)
+            isTimeUp = true;
+    }
     //---------------- Player Physics -------------------------
 
     /**
@@ -265,7 +287,17 @@ public class BossRoom extends Room {
             }
         }
     }
+    /**
+     * Deals one damage once a bolt hits the player.
+     * @param player 
+     */
+    private void checkBoltHits(Player player){
+        if (player.isInvincible()) return;
 
+        if (boss.boltHits(player.getLeft(), player.getTop(), player.getWidth(), player.getHeight())){
+            player.takeDamage(1);
+        }
+    }
     //------------------------ Draw --------------------------
 
     /**
@@ -280,8 +312,13 @@ public class BossRoom extends Room {
         drawBackground(g, cam);
         drawFloor(g, cam);
         boss.draw(g, cam);
+        drawTimer(g);
     }
-
+    private void drawTimer(Graphics2D g){
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        g.setColor(Color.BLACK);
+        g.drawString("Time: " + String.format("%02ds", TIME_LIMIT - currentElapsedTime), 550, 30);
+    }
     //---------------- Draw Helpers --------------------------
 
     /**
@@ -345,4 +382,10 @@ public class BossRoom extends Room {
      *         from your game state to trigger the win screen
      */
     public boolean isWon() { return bossDefeated; }
+    public boolean isTimeUp() { return isTimeUp; }
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (currentElapsedTime < TIME_LIMIT) 
+            currentElapsedTime += 1;
+    }
 }

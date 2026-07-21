@@ -156,10 +156,14 @@ public class SoundManager {
         loadMusic("village", "/assets/audio/music/villageBackground.wav");
         loadMusic("boss", "/assets/audio/music/bossBackgroundCompressed.wav");
         loadMusic("winScreen", "/assets/audio/music/winScreenCompressed.wav");
+        loadMusic("gauntlet", "/assets/audio/music/gauntletBackground.wav");
+        loadMusic("gauntlet2", "/assets/audio/music/gauntlet2Background.wav");
+        loadMusic("shaft", "/assets/audio/music/shaftBackground.wav");
     }
     private static void loadAllSfx(){
         loadSfx("villageLife", "/assets/audio/sfx/environment/villageLife.wav");
         loadSfx("benchRest", "/assets/audio/sfx/environment/benchRest.wav");
+        loadSfx("doorOpen", "/assets/audio/sfx/environment/doorOpen.wav");
         
         loadPlayerSfx();
         loadBossSfx();
@@ -172,7 +176,6 @@ public class SoundManager {
         loadSfx("playerJump", "/assets/audio/sfx/player/hero_jump.wav");
         loadSfx("playerHitGround", "/assets/audio/sfx/player/hero_land_hard.wav");
         loadSfx("playerRunFootsteps", "/assets/audio/sfx/player/hero_run_footsteps_grass.wav");
-        loadSfx("superDash", "/assets/audio/sfx/player/hero_super_dash_burst.wav");
         loadSfx("wallSlide", "/assets/audio/sfx/player/hero_wall_slide.wav");
         loadSfx("slash", "/assets/audio/sfx/player/hero_slash.wav");
     }
@@ -180,5 +183,7 @@ public class SoundManager {
         loadSfx("slam", "/assets/audio/sfx/boss/strikeGround.wav");
         loadSfx("leap", "/assets/audio/sfx/boss/jump.wav");
         loadSfx("damageBoss", "/assets/audio/sfx/boss/getBodyDamage.wav");
+        loadSfx("fireBolt", "/assets/audio/sfx/boss/bossBolt.wav");
+        loadSfx("bossDash", "/assets/audio/sfx/boss/dash.wav");
     }
 }

@@ -48,6 +48,8 @@ public class PlayingState implements GameState {
 
     //------------------- Win -----------------------------
     private boolean bossDefeated = false;
+    
+    private boolean timeIsUp;
     /**
      * Creates the playing state, initializes the player, camera,
      * and drops into the village as the starting room.
@@ -110,6 +112,12 @@ public class PlayingState implements GameState {
             camera.shake(Camera.SHAKE_DURATION, Camera.SHAKE_MAGNITUDE);
             bossDefeated = true;
         }
+        
+        // checks if the timer in BoosRoom is up and kills the player if time's up
+        if (currentRoom instanceof BossRoom br && br.isTimeUp()){
+            player.setIsAlive(false);
+            timeIsUp = true;
+        }
 
         input.flushJustPressed();
     }
@@ -146,7 +154,8 @@ public class PlayingState implements GameState {
         player.draw(g, camera);
         drawHUD(g);
 
-        if (player.isDead()) drawDeathOverlay(g);
+        if (player.isDead() && !timeIsUp) drawDeathOverlay(g);
+        else if (timeIsUp) drawTimesUpOverlay(g);
     }
 
     //---------------- Draw Helpers --------------------------
@@ -216,6 +225,20 @@ public class PlayingState implements GameState {
             g.drawString(msg, screenW / 2 - mw / 2, screenH / 2);
         }
     }
+    private void drawTimesUpOverlay(Graphics2D g) {
+        float alpha = Math.min(deathTimer / DEATH_RESPAWN_DELAY, 1f);
+        g.setColor(new Color(0f, 0f, 0f, alpha * 0.8f));
+        g.fillRect(0, 0, screenW, screenH);
+
+        if (deathTimer > 0.6f) {
+            float textAlpha = Math.min((deathTimer - 0.6f) / 0.4f, 1f);
+            g.setFont(new Font("Serif", Font.PLAIN, 28));
+            g.setColor(new Color(180, 60, 60, (int)(180 * textAlpha)));
+            String msg = "Time's Up";
+            int mw = g.getFontMetrics().stringWidth(msg);
+            g.drawString(msg, screenW / 2 - mw / 2, screenH / 2);
+        }
+    }
 
     //-------------- Accessors for State Manager -------------
 
@@ -258,8 +281,6 @@ public class PlayingState implements GameState {
                 currentRoom = new VillageRoom(input);
                 player.setX(player.spawnX);
                 player.setY(player.spawnY);
-                SoundManager.stopAllSfx();
-                SoundManager.playMusic("village");
             }
             case "gauntlet_room" -> {
                 currentRoom = new GauntletRoom(input);
