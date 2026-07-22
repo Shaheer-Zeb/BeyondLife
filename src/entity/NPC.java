@@ -4,6 +4,7 @@
  */
 package entity;
 
+import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
 import java.awt.BasicStroke;
@@ -34,7 +35,7 @@ public class NPC extends Entity{
     
     //--------------- GIF Stuff - Uses a GIF for NPCs instead of spritesheets, since the NPCs always stay idle and it wouldn't make sense for spritesheets, plus timers me lag masaail a rhe the, and it also takes longer :( --------------
     public static enum NPCTYPE{
-        FASEEH, SHAHEER, PIGEONDOCTOR;
+        FASEEH, SHAHEER, PIGEONDOCTOR, ELEONORA;
     }
     private Image npcGif;
     
@@ -182,9 +183,10 @@ public class NPC extends Entity{
     public void loadGif(NPCTYPE type){
         switch (type)
         {
-            case FASEEH -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/faseehIdle.gif");
-            case SHAHEER -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/shaheerIdle.gif");
-            case PIGEONDOCTOR -> npcGif = Toolkit.getDefaultToolkit().getImage("src/assets/sprites/npc/pigeonDoctorIdle.gif");
+            case FASEEH -> npcGif = AssetManager.getGif("/assets/sprites/npc/faseehIdle.gif");
+            case SHAHEER -> npcGif = AssetManager.getGif("/assets/sprites/npc/shaheerIdle.gif");
+            case PIGEONDOCTOR -> npcGif = AssetManager.getGif("/assets/sprites/npc/pigeonDoctorIdle.gif");
+            case ELEONORA -> npcGif = AssetManager.getGif("/assets/sprites/npc/eleonoraIdle.gif");
         }
     }
 }

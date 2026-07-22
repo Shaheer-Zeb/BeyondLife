@@ -4,11 +4,11 @@
  */
 package entity;
 
+import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Toolkit;
 
 /**
  *
@@ -21,7 +21,7 @@ public class Walker extends Entity {
     public final static int WALKER_HP = 20;
 
     //--------------------- Physics -------------------------------
-    private final float WALK_SPEED = 220f;
+    private final float WALK_SPEED = 160f;
     private final int platformY;
     private final float landingTolerance = 6f; //Landing trigger range
 
@@ -39,13 +39,24 @@ public class Walker extends Entity {
     private float dmgTimer = 0;
     
     // ---------------- GIF Handling ----------------------
-    private Image walkerGif;
+    private Image walkerGif, walkerWalkGif, walkerHitGif, walkerDeathGif;
     
     public static enum WalkerType
     {
         SLIME, DINO
     }
+    private enum State
+    {
+        Walking, Hit, Death
+    }
     private WalkerType type;
+    private State state = State.Walking;
+    
+    // ------------ Death Stuff -----------
+    private static final float DEATH_DURATION = 0.5f;
+    private float deathTimer = 0f;
+    private boolean isRemovable = false; // basicaly, it'd become true once the deathTimer is up, and now the GauntletRoom and the GauntletRoom2 update and draw the walkers based on if they are removable, and they don't update or draw them if they are marked removable 
+    
     public Walker(float x, float y, int platformY, InputHandler input, int patrolLeftBoundary, int patrolRightBoundary, WalkerType type) {
         super(x, y, WALKER_W, WALKER_H, WALKER_HP);
         this.platformY = platformY;
@@ -105,7 +116,18 @@ public class Walker extends Entity {
 
     @Override
     public void update(float deltaTime) {
+        updateState();
+        updateGif();
         
+        if (state == State.Death){
+            deathTimer -= deltaTime;
+
+            if (deathTimer <= 0f){
+                 isRemovable = true;
+            }
+
+        return;
+        }
         if(dmgTimer > 0){ 
             dmgTimer -= deltaTime;
             setX(playerX < getLeft() ? getLeft() + 10 : getLeft() - 10);
@@ -117,26 +139,53 @@ public class Walker extends Entity {
             updatePatrol(deltaTime);
         }
     }
-
+    private void updateState() {
+        if (state == State.Death)
+            return;
+        if (isDead()){
+            state = State.Death;
+            deathTimer = DEATH_DURATION;
+            return;
+        }
+        if (dmgTimer > 0f) {
+            state = State.Hit;
+            return;
+        }
+        state = State.Walking;
+    }
+    private void updateGif(){
+        switch (state)
+        {
+            case Walking -> walkerGif = walkerWalkGif;
+            case Hit -> walkerGif = walkerHitGif;
+            case Death -> walkerGif = walkerDeathGif;
+        }
+    }
     @Override
     public void draw(Graphics2D g, Camera cam) {
-        if(!isDead()){
-            int drawX = (int)(getLeft() - cam.offsetX);
-            int drawY = (int)(getTop() - cam.offsetY);
-            if (getDir() == Direction.LEFT)
-                g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
-            else if (getDir() == Direction.RIGHT)
-                g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
-            
-        }
-        
-        
+        int drawX = (int)(getLeft() - cam.offsetX);
+        int drawY = (int)(getTop() - cam.offsetY);
+        if (getDir() == Direction.LEFT)
+            g.drawImage(walkerGif, drawX, drawY, getWidth(), getHeight(), null);
+        else if (getDir() == Direction.RIGHT)
+            g.drawImage(walkerGif, drawX + getWidth(), drawY, -getWidth(), getHeight(), null);
     }
     private void loadGif(){
         switch (type)
         {
-            case SLIME -> walkerGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/enemies/slimer.gif");
-            case DINO -> walkerGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/enemies/dino.gif");
+            case SLIME -> 
+            {
+                walkerWalkGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/slimer/slime_walk_anim.gif");
+                walkerHitGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/slimer/slime_hit_anim.gif");
+                walkerDeathGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/slimer/slime_death_anim.gif");
+            }
+            case DINO -> 
+            {
+                walkerWalkGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/dino/dino_walk_anim.gif");
+                walkerHitGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/dino/dino_hit_anim.gif");
+                walkerDeathGif = AssetManager.getGif("/assets/rooms/gauntlet/enemies/dino/dino_death_anim.gif");
+            }
         }
     }
+    public boolean isRemovable(){ return isRemovable; }
 }

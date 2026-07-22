@@ -7,6 +7,8 @@ package room;
 import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
+import entity.Direction;
 import entity.Player;
 import entity.Walker;
 import entity.attack.Slash;
@@ -34,7 +36,7 @@ public class GauntletRoom extends Room {
     private static final String NEXT_ROOM_ID = "gauntlet2_room";
 
     //------------------- Platforms & Kill Zone ---------------
-    private static final int PLATFORM_H = 40;
+    private static final int PLATFORM_H = 80;
     private static final float LAND_TOLERANCE = 14f;
 
     private final Platform[] platforms = new Platform[] {
@@ -93,6 +95,10 @@ public class GauntletRoom extends Room {
         
         doorX = p5.getRight() - DOOR_W - 20;
         doorY = p5.getY() - DOOR_H + 17;
+        
+        SoundManager.stopAllSfx();
+        SoundManager.playMusic("gauntlet");
+        SoundManager.setMusicVolume(-10);
     }
     
     private void checkWalkerDamage(Player player, Walker walker) {
@@ -129,14 +135,14 @@ public class GauntletRoom extends Room {
         float playerCenterX = player.getLeft() + player.getWidth() / 2f;
         float playerFeetY = player.getTop() + player.getHeight();
 
-        walkerOnPlatform2.setPlayerPosition(playerCenterX, playerFeetY);
+        walkerOnPlatform2.setPlayerPosition(playerCenterX, playerFeetY); // removed the isDead() check because now the Walker's update() will itself return if the state is Death
         walkerOnPlatform4.setPlayerPosition(playerCenterX, playerFeetY);
         
         checkWalkerDamage(player, walkerOnPlatform2);
         checkWalkerDamage(player, walkerOnPlatform4);
         
-        if(!walkerOnPlatform2.isDead()) walkerOnPlatform2.update(dt);
-        if(!walkerOnPlatform4.isDead()) walkerOnPlatform4.update(dt);
+        if (!walkerOnPlatform2.isRemovable()) walkerOnPlatform2.update(dt);
+        if (!walkerOnPlatform4.isRemovable()) walkerOnPlatform4.update(dt);
 
         updatePlayerPhysics(player);
         checkKillZone(player);
@@ -194,8 +200,17 @@ public class GauntletRoom extends Room {
     private void checkKillZone(Player player) {
         if (killZone.catches(player)) {
             player.takeDamage(1);
-            player.setX(lastSafeX);
-            player.setY(lastSafeY);
+            // the player was respawing a little to the right of the platform when falling to the right of the platfrom and a little left when falling a left, so this adjusts the position on the platform depending on the side the player fell
+            if (player.getDir() == Direction.RIGHT)
+            {
+                player.setX(lastSafeX - player.getWidth());
+                player.setY(lastSafeY);
+            }
+            else if (player.getDir() == Direction.LEFT)
+            {
+                player.setX(lastSafeX + player.getWidth());
+                player.setY(lastSafeY);
+            }
             player.setVelX(0);
             player.setVelY(0);
         }
@@ -237,7 +252,11 @@ public class GauntletRoom extends Room {
             player.getTop() < doorY + DOOR_H &&
             player.getTop() + player.getHeight() > doorY;
 
-        if (overlapping) doorTriggered = true;
+        if (overlapping)
+        {
+            doorTriggered = true;
+            SoundManager.playSfx("doorOpen");
+        }
     }
 
     //------------------------ Draw --------------------------
@@ -252,8 +271,8 @@ public class GauntletRoom extends Room {
         killZone.draw(g, cam);
         drawDoor(g, cam);
 
-        walkerOnPlatform2.draw(g, cam);
-        walkerOnPlatform4.draw(g, cam);
+        if (!walkerOnPlatform2.isRemovable()) walkerOnPlatform2.draw(g, cam);
+        if (!walkerOnPlatform4.isRemovable()) walkerOnPlatform4.draw(g, cam);
     }
 
     private void drawBackground(Graphics2D g, Camera cam) {
