@@ -10,16 +10,16 @@ package entity.attack;
  */
 public class BossBolt {
     
-        private float x, y, vx;
-        private boolean active = true;
-        public static final int SIZE = 18;
-        
-        public BossBolt(float x, float y, float vx) { 
-            this.x = x;
-            this.y = y;
-            this.vx = vx;
-        }
 
+    private float x, y, vx;
+    private boolean active = true;
+    public static final int SIZE = 18 * 4;
+        
+    public BossBolt(float x, float y, float vx) { 
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+    }
     public float getX() {
         return x;
     }
@@ -51,5 +51,5 @@ public class BossBolt {
     public void setActive(boolean active) {
         this.active = active;
     }
-    
+
 }

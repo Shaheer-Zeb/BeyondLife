@@ -4,6 +4,8 @@
  */
 package core;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,7 +18,6 @@ import javax.imageio.ImageIO;
  */
 public class AssetManager {
     private static final Map<String, BufferedImage> images = new HashMap<>();
-
     /**
      * Returns the BufferedImage if its path already exists in the Hashmap, else it'd load the image in the Hashmap and return it.
      * @param path
@@ -38,5 +39,13 @@ public class AssetManager {
         catch (IOException | IllegalArgumentException e) {
             throw new RuntimeException("Failed to load image: " + path, e);
         }
+    }
+    /**
+     * Directly returns the GIF.
+     * @param path
+     * @return 
+     */
+    public static Image getGif(String path){
+        return Toolkit.getDefaultToolkit().getImage(AssetManager.class.getResource(path));
     }
 }

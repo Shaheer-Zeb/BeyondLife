@@ -23,8 +23,8 @@ public class KillZone {
     private final float roomW;
     private final float roomH;
     
-    private Image lavaGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/lava.gif");
-    private final int LAVA_BLOCK_WIDTH = 16, LAVA_BLOCK_HEIGHT = 42;
+    private Image waterGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/gauntlet/water.gif");
+    private final int WATER_BLOCK_WIDTH = 160, WATER_BLOCK_HEIGHT = 64;
 
     public KillZone(float killY, float roomW, float roomH) {
         this.killY = killY;
@@ -53,10 +53,10 @@ public class KillZone {
         int drawX = (int)(-cam.offsetX);
         int drawY = (int)(killY - cam.offsetY);
         
-        int numberOfLavaBlocks = (int) roomW / LAVA_BLOCK_WIDTH;
-        for (int i = 0; i < numberOfLavaBlocks; i++){
-            g.drawImage(lavaGif, drawX, drawY, LAVA_BLOCK_WIDTH, LAVA_BLOCK_HEIGHT, null);
-            drawX += LAVA_BLOCK_WIDTH;
+        int numberOfWaterBlocks = (int) roomW / WATER_BLOCK_WIDTH + 1;
+        for (int i = 0; i < numberOfWaterBlocks; i++){
+            g.drawImage(waterGif, drawX, drawY, WATER_BLOCK_WIDTH, WATER_BLOCK_HEIGHT, null);
+            drawX += WATER_BLOCK_WIDTH;
         }
     }
 }

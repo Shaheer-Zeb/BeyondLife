@@ -9,6 +9,7 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import room.BossRoom;
+import room.ShaftRoom;
 import room.VillageRoom;
 
 /**
@@ -29,6 +30,10 @@ public class TileManager {
     
     // -------------------- Boss Room Tiles ------------------------
     private static int bossGroundTileWidth = 372, bossGroundTileHeight = 119;
+    
+    // -------------------- Shaft Room Tiles -----------------------------
+    private static int numberOfRowsInShaft = (int)ShaftRoom.ROOM_H / villageTileHeight;
+    private static int numberOfColumnsInShaft = (int)ShaftRoom.ROOM_W / villageTileWidth;
     /**
      * Calls the drawGrass and the drawDirt method. It is called by the VillageRoom.
      * @param g
@@ -106,6 +111,46 @@ public class TileManager {
             int drawX = (int)(xPos - cam.offsetX);
             int drawY = (int)(yPos - cam.offsetY);
             g.drawImage(villageWallTile, drawX, drawY, villageTileWidth, villageTileHeight, null);
+            yPos += villageTileHeight;
+        }
+    }
+    public static void drawShaftTiles(Graphics2D g, Camera cam){
+        drawShaftGrass(g, cam);
+        drawShaftDirt(g, cam);
+    }
+    private static void drawShaftGrass(Graphics2D g, Camera cam){
+        int xPos = 0;
+        int yPos = ShaftRoom.GROUND_Y;
+        for (int i = 0; i <= ShaftRoom.ROOM_W / villageTileWidth; i++){
+            if (xPos > ShaftRoom.ROOM_W)
+                xPos = 0;
+            int drawX = (int)(xPos - cam.offsetX);
+            int drawY = (int)(yPos - cam.offsetY) - padding; // subtracting padding because the grass tile's top wasn't aligning with the Player and the other stuff in the VillageRoom
+            g.drawImage(villageGrassTile, drawX, drawY, villageTileWidth, villageTileHeight, null);
+            xPos += villageTileWidth;
+        }
+    }
+    private static void drawShaftDirt(Graphics2D g, Camera cam){
+        int xPos = 0;
+        int startingY = ShaftRoom.GROUND_Y + villageTileHeight - padding;
+        int yPos = startingY;
+
+        // Calculating how many rows of dirt tiles we've got to draw under the grass tile
+        int remainingHeight = (int)ShaftRoom.ROOM_H - (ShaftRoom.GROUND_Y + villageTileHeight);
+        int rowsOfDirtToDraw = remainingHeight / villageTileHeight + 1; // adding 1 to draw one extra row of dirt to complete the gap
+        
+        for (int i = 0; i <= rowsOfDirtToDraw; i++)
+        {
+            xPos = 0;
+            if (yPos > ShaftRoom.ROOM_H)
+                yPos = startingY;
+            for (int j = 0; j < ShaftRoom.ROOM_W / villageTileWidth; j++)
+            {
+                int drawX = (int)(xPos - cam.offsetX);
+                int drawY = (int)(yPos - cam.offsetY);
+                g.drawImage(villageDirtTile, drawX, drawY, villageTileWidth, villageTileHeight, null);
+                xPos += villageTileWidth;
+            }
             yPos += villageTileHeight;
         }
     }

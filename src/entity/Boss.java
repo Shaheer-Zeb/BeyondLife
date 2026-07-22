@@ -15,6 +15,7 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -102,6 +103,9 @@ public class Boss extends Entity implements ActionListener{
     private final float CHARGE_RECOVER_DURATION = 0.4f;
     private final float CHARGE_SPEED = 900f;
     private float chargeTargetX = 0f;
+    private Image dashEffectGif = AssetManager.getGif("/assets/sprites/boss/bossDash.gif");
+    private final int dashGifWidth = 32 * 6, dashGifHeight = 32 * 6;
+
 
     //----------------- Barrage attack tuning -------------------------
     private float barrageTimer = 0;
@@ -113,8 +117,7 @@ public class Boss extends Entity implements ActionListener{
     private int boltsFired = 0;
     private float boltFireCooldown = 0;
     private final List<BossBolt> bolts = new ArrayList<>();
-
- 
+    private Image boltGif = AssetManager.getGif("/assets/sprites/boss/bossBolt.gif");
     
 
     //----------------- Vulnerable window --------------------------
@@ -163,7 +166,7 @@ public class Boss extends Entity implements ActionListener{
         sheetY = spriteRowNumber * SPRITE_HEIGHT;
     }
     private void handleSpriteRow(){
-        if (null != state)
+        if (state != null)
             switch (state) 
             {
                 case DORMANT, VULNERABLE -> spriteRowNumber = SPRITEACTION.IDLE.ordinal();
@@ -203,10 +206,19 @@ public class Boss extends Entity implements ActionListener{
         else if (patrolDir == 1)
             g.drawImage(spriteFrame, (int)drawX + BOSS_W, (int)drawY, -BOSS_W, BOSS_H, null);
         g.setComposite(originalComposite);
-        
+        if (chargePhase == ChargePhase.DASHING)
+            drawDashEffect(g, cam);
         if(state != State.DORMANT)
             drawHealthBar(g, drawX, drawY);
 
+    }
+    private void drawDashEffect(Graphics2D g, Camera cam){
+        int drawX = (int)(((patrolDir == 1) ? getLeft() - dashGifWidth + 20 : getRight() - 20) - cam.offsetX);
+        int drawY = (int)(groundY - dashGifHeight - cam.offsetY);
+        if (patrolDir == -1)
+            g.drawImage(dashEffectGif, drawX, drawY, dashGifWidth, dashGifHeight, null);
+        else if (patrolDir == 1)
+            g.drawImage(dashEffectGif, drawX + dashGifWidth, drawY, -dashGifWidth, dashGifHeight, null);
     }
     private void drawChallengeOption(Graphics2D g, float drawX, float drawY){
         float dist = Math.abs((playerX) - (getLeft() + BOSS_W / 2f));
@@ -483,7 +495,7 @@ public class Boss extends Entity implements ActionListener{
                     setVelX(0);
                     chargePhase = ChargePhase.RECOVER;
                     chargeTimer = 0;
-                    SoundManager.playSfx("slam");
+                    SoundManager.playSfx("bossDash");
                 }
             }
             case RECOVER -> {
@@ -542,7 +554,7 @@ public class Boss extends Entity implements ActionListener{
         float dir = (playerX > originX) ? 1 : -1;
         patrolDir = (int) dir;
         bolts.add(new BossBolt(originX, originY, BOLT_SPEED * dir));
-        SoundManager.playSfx("leap"); // swap for a dedicated bolt sfx if one gets added
+        SoundManager.playSfx("fireBolt"); 
     }
 
     /** Advances all active bolts and culls any that have left the arena. */
@@ -662,13 +674,15 @@ public class Boss extends Entity implements ActionListener{
 
     /** Draws every active barrage bolt as a simple glowing orb. */
     private void drawBolts(Graphics2D g, Camera cam) {
-        g.setColor(new Color(160, 90, 230));
         for (BossBolt b : bolts) {
             if (!b.isActive()) continue;
             int size = BossBolt.SIZE;
             int drawX = (int) (b.getX() - size / 2f - cam.offsetX);
             int drawY = (int) (b.getY() - size / 2f - cam.offsetY);
-            g.fillOval(drawX, drawY, size, size);
+            if (patrolDir == 1)
+                g.drawImage(boltGif, drawX, drawY, size, size, null);
+            else if (patrolDir == -1)
+                g.drawImage(boltGif, drawX + size, drawY, -size, size, null);
         }
     }
     

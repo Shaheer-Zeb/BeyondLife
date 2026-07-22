@@ -7,7 +7,10 @@ package room;
 import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
+import core.TileManager;
 import entity.Bench;
+import entity.NPC;
 import entity.Player;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -23,11 +26,11 @@ public class ShaftRoom extends Room {
 
     //------------------- Room Layout ----------------------
     public static final float ROOM_W = 2000;
-    public static final float ROOM_H = 4000;
+    public static final float ROOM_H = 2000;
     private static final int CEILING_Y = 60;
     private static final int ROOM_LEFT = 0;
     private static final int ROOM_RIGHT = (int) ROOM_W;
-    public static final int GROUND_Y = 3900;
+    public static final int GROUND_Y = 1900;
     
     private static final String BOSS_ROOM_ID = "boss_room";
     
@@ -35,23 +38,58 @@ public class ShaftRoom extends Room {
     private static final int DOOR_W = 128;
     private static final int DOOR_H = 128;
     private final int doorX = ROOM_RIGHT - DOOR_W;
-    private final int doorY = GROUND_Y - DOOR_H + 20;
+    private final int doorY = GROUND_Y - DOOR_H + 17;
     private boolean doorTriggered = false;
-    private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
+    private Image doorPortalGif = AssetManager.getGif("/assets/rooms/village/doorPortal1.gif");
 
     // -------------------- Parallax Background --------------------
-    private BufferedImage sky = AssetManager.getImage("/assets/rooms/gauntlet/sky.png");
-    private BufferedImage cloudsOne = AssetManager.getImage("/assets/rooms/gauntlet/clouds_1.png");
-    private BufferedImage cloudsTwo = AssetManager.getImage("/assets/rooms/gauntlet/clouds_2.png");
-    private BufferedImage rocks = AssetManager.getImage("/assets/rooms/gauntlet/rocks.png");
-    private BufferedImage ground = AssetManager.getImage("/assets/rooms/gauntlet/ground.png");
+    private BufferedImage sky = AssetManager.getImage("/assets/rooms/shaft/background/sky.png");
+    private BufferedImage cloudsOne = AssetManager.getImage("/assets/rooms/shaft/background/clouds_1.png");
+    private BufferedImage cloudsTwo = AssetManager.getImage("/assets/rooms/shaft/background/clouds_2.png");
+    private BufferedImage rocks = AssetManager.getImage("/assets/rooms/shaft/background/rocks.png");
+    private BufferedImage groundOne = AssetManager.getImage("/assets/rooms/shaft/background/ground_1.png");
+    private BufferedImage groundTwo = AssetManager.getImage("/assets/rooms/shaft/background/ground_2.png");
+    private BufferedImage groundThree = AssetManager.getImage("/assets/rooms/shaft/background/ground_2.png");
+    private BufferedImage plant = AssetManager.getImage("/assets/rooms/shaft/background/plant.png");
 
-    Bench bench;
+    private Bench bench;
+    
+    // ------------- NPC Stuff ----------------
+    private static final int NPC_W = 128;
+    private static final int NPC_H = 128;
+    private NPC eleonora;
+    
+    // -------------- Environment Stuff ----------------
+    private Image birdIdleGif = AssetManager.getGif("/assets/rooms/shaft/environment/bird.gif");
+    private Image rabbitIdleGif = AssetManager.getGif("/assets/rooms/shaft/environment/rabbit.gif");
+    private Image campfireGif = AssetManager.getGif("/assets/rooms/shaft/environment/campfire.gif");
+    private Image campfireWithFoodGif = AssetManager.getGif("/assets/rooms/shaft/environment/campfireWithFood.gif");
+    
+    private Image coffin = AssetManager.getImage("/assets/rooms/shaft/environment/coffin.png");
+    private Image graveOne = AssetManager.getImage("/assets/rooms/shaft/environment/grave.png");
+    private Image graveTwo = AssetManager.getImage("/assets/rooms/shaft/environment/graveTwo.png");
+    private Image house = AssetManager.getImage("/assets/rooms/shaft/environment/house.png");
+    private Image lamp = AssetManager.getImage("/assets/rooms/shaft/environment/lamp.png");
+    private Image lantern = AssetManager.getImage("/assets/rooms/shaft/environment/lantern.png");
+    private Image sign = AssetManager.getImage("/assets/rooms/shaft/environment/sign.png");
+    private Image trunkOne = AssetManager.getImage("/assets/rooms/shaft/environment/trunkOne.png");
+    private Image trunkTwo = AssetManager.getImage("/assets/rooms/shaft/environment/trunkTwo.png");
     
     public ShaftRoom(InputHandler input) {
         super("shaft_room", ROOM_W, ROOM_H);
         
         bench = new Bench(doorX - Bench.benchH - 500, GROUND_Y - 28, input);
+        eleonora = new NPC("Eleonora", roomW / 2, GROUND_Y - NPC_H + 20, NPC_H, NPC_W, input, NPC.NPCTYPE.ELEONORA,
+        "You've come farther than most ever do.",
+        "I've watched countless warriors walk through that door.",
+        "Some returned victorious.",
+        "Most didn't even return at all.",
+        "Take one last sit.",
+        "I'll be waiting here when you return.");
+        
+        SoundManager.stopAllSfx();
+        SoundManager.playMusic("shaft");
+        SoundManager.setMusicVolume(-10);
     }
     
     /**
@@ -60,7 +98,7 @@ public class ShaftRoom extends Room {
      * @param player the player obj
      */
     private void updatePlayerPhysics(Player player) {
-
+        
         // Ground
         if (player.getTop() + player.getHeight() - 1 >= GROUND_Y) {
             player.setY(GROUND_Y - player.getHeight());
@@ -105,7 +143,11 @@ public class ShaftRoom extends Room {
             player.getTop() < doorY + DOOR_H &&
             player.getTop() + player.getHeight() > doorY;
 
-        if (overlapping) doorTriggered = true;
+        if (overlapping)
+        {
+            doorTriggered = true;
+            SoundManager.playSfx("doorOpen");
+        }
     }
     
     @Override
@@ -116,7 +158,8 @@ public class ShaftRoom extends Room {
         
         bench.update(dt);
         bench.updateInteraction(player, id);
-     
+        
+        eleonora.updateInteraction(player.getLeft() + player.getWidth() / 2, player.getTop() + player.getHeight() / 2);
         
     }
 
@@ -129,6 +172,8 @@ public class ShaftRoom extends Room {
          
          g.setColor(Color.MAGENTA);
          drawFloor(g, cam);
+         drawEnvironment(g, cam);
+         drawNpcs(g, cam);
     }
     
     private void drawBackground(Graphics2D g, Camera cam) {
@@ -148,12 +193,93 @@ public class ShaftRoom extends Room {
         drawX = (int)(-cam.offsetX * 0.5);
         drawY = (int)(-cam.offsetY * 0.5);
         g.drawImage(rocks, drawX, drawY, roomWidth, roomHeight, null);
+       
+        drawX = (int)(-cam.offsetX * 0.6);
+        drawY = (int)(-cam.offsetY * 0.6);
+        g.drawImage(groundOne, drawX, drawY, roomWidth, roomHeight, null);
         
+        
+        drawX = (int)(-cam.offsetX * 0.7);
+        drawY = (int)(-cam.offsetY * 0.7);
+        g.drawImage(groundTwo, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.8);
+        drawY = (int)(-cam.offsetY * 0.8);
+        g.drawImage(groundThree, drawX, drawY, roomWidth, roomHeight, null);
+        
+        drawX = (int)(-cam.offsetX * 0.9);
+        drawY = (int)(-cam.offsetY * 0.9);
+        g.drawImage(plant, drawX, drawY, roomWidth, roomHeight, null);
 
 //        g.drawImage(ground, drawX, drawY, roomWidth, roomHeight, null);
         
     }
-
+    private void drawNpcs(Graphics2D g, Camera cam){
+        eleonora.draw(g, cam);
+    }
+    private void drawEnvironment(Graphics2D g, Camera cam){
+        drawRabbit(g, cam);
+        drawCampfires(g, cam);
+        drawHouse(g, cam);
+        drawBird(g, cam);
+        drawGraveyard(g, cam);
+        drawTrunks(g, cam);
+        drawLights(g, cam);
+        drawSign(g, cam);
+    }
+    private void drawLights(Graphics2D g, Camera cam){
+        int drawX = (int)(bench.getLeft() - 70 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 64 - cam.offsetY);
+        g.drawImage(lantern, drawX, drawY, 64, 64, null);
+        
+        drawX = (int)(bench.getRight() + 10 - cam.offsetX);
+        drawY = (int)(GROUND_Y - 128 - cam.offsetY);
+        g.drawImage(lamp, drawX, drawY, 64, 128, null);
+        
+    }
+    private void drawSign(Graphics2D g, Camera cam){
+        int drawX = (int)(doorX - 80 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 64 - cam.offsetY);
+        g.drawImage(sign, drawX, drawY, 64, 64, null);
+    }
+    private void drawGraveyard(Graphics2D g, Camera cam){
+        int drawX = (int)(430 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 69 - cam.offsetY);
+        g.drawImage(coffin, drawX, drawY, 69, 66, null);
+        
+        drawX += 70;
+        drawY = (int)(GROUND_Y - 64 - cam.offsetY);
+        g.drawImage(graveOne, drawX, drawY, 64, 64, null);
+        
+        drawX += 70;
+        g.drawImage(graveTwo, drawX, drawY, 64, 64, null);
+    }
+    private void drawTrunks(Graphics2D g, Camera cam){
+        
+    }
+    private void drawHouse(Graphics2D g, Camera cam){
+        int drawX = (int)(200 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 200 - cam.offsetY);
+        g.drawImage(house, drawX, drawY, 210, 200, null);
+    }
+    private void drawBird(Graphics2D g, Camera cam){
+        int drawX = (int)(200 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 16 - cam.offsetY);
+        g.drawImage(birdIdleGif, drawX, drawY, 16, 16, null);
+    }
+    private void drawRabbit(Graphics2D g, Camera cam){
+        int drawX = (int)(eleonora.getLeft() - 50 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 16 - cam.offsetY);
+        g.drawImage(rabbitIdleGif, drawX, drawY, 32, 16, null);
+    }
+    private void drawCampfires(Graphics2D g, Camera cam){
+        int drawX = (int)(1600 - cam.offsetX);
+        int drawY = (int)(GROUND_Y - 96 - cam.offsetY);
+        g.drawImage(campfireGif, drawX, drawY, 96, 96, null);
+        
+//        drawX = (int)(800 - cam.offsetX);
+//        g.drawImage(campfireWithFoodGif, drawX, drawY, 96, 96, null);
+    }
     private void drawDoor(Graphics2D g, Camera cam) {
         int drawX = (int)(doorX - cam.offsetX);
         int drawY = (int)(doorY - cam.offsetY);
@@ -161,11 +287,7 @@ public class ShaftRoom extends Room {
     }
 
     private void drawFloor(Graphics2D g, Camera cam) {
-        int drawX = (int)(-cam.offsetX);
-        int drawY = (int)(GROUND_Y - cam.offsetY);
-
-        g.setColor(Color.RED);
-        g.fillRect(drawX, drawY, (int)ROOM_W, 100);
+        TileManager.drawShaftTiles(g, cam);
     }
     
     //------------------- Room Transition --------------------

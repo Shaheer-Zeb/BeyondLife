@@ -3,6 +3,7 @@ package room;
 import core.AssetManager;
 import core.Camera;
 import core.InputHandler;
+import core.SoundManager;
 import entity.Player;
 import entity.Walker;
 import entity.attack.Slash;
@@ -42,7 +43,7 @@ public class GauntletRoom2 extends Room {
     private final int doorX;
     private final int doorY;
     private boolean doorTriggered = false;
-    private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
+    private Image doorPortalGif = AssetManager.getGif("/assets/rooms/village/doorPortal1.gif");
 
     //------------------- Checkpoint (respawn point) ------------
     private float lastSafeX;
@@ -87,6 +88,10 @@ public class GauntletRoom2 extends Room {
         // Initial checkpoint = spawn platform, not a per-frame guess.
         lastSafeX = startX;
         lastSafeY = startY - PLATFORM_H;
+        
+        SoundManager.stopAllSfx();
+        SoundManager.playMusic("gauntlet2");
+        SoundManager.setMusicVolume(-10);
     }
     
     
@@ -159,8 +164,7 @@ public class GauntletRoom2 extends Room {
         for (Walker w : walkers) {
             w.setPlayerPosition(playerCenterX, playerFeetY);
             checkWalkerDamage(player, w);
-
-            if (!w.isDead()) {
+            if (!w.isRemovable()){
                 w.update(dt);
                 checkWalkerContact(player, w, cam);
             }
@@ -185,7 +189,8 @@ public class GauntletRoom2 extends Room {
         drawDoor(g, cam);
 
         for (Walker w : walkers) {
-            w.draw(g, cam);
+            if (!w.isRemovable()) 
+                w.draw(g, cam);
         }
     }
 
@@ -235,7 +240,12 @@ public class GauntletRoom2 extends Room {
             player.getTop() < doorY + DOOR_H &&
             player.getTop() + player.getHeight() > doorY;
 
-        if (overlapping) doorTriggered = true;
+        if (overlapping)
+        {
+            doorTriggered = true;
+            SoundManager.playSfx("doorOpen");
+        }
+        
     }
 
     //------------------- Room Transition --------------------

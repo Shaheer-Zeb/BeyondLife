@@ -14,7 +14,6 @@ import entity.NPC;
 import entity.Player;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 
 /**
@@ -47,9 +46,10 @@ public class VillageRoom extends Room {
     private static final int DOOR_W = 128;
     private static final int DOOR_H = 128;
     private static final int DOOR_X = ROOM_RIGHT - DOOR_W;
+//    private static final int DOOR_X = ROOM_LEFT;
     private static final int DOOR_Y = GROUND_Y - DOOR_H + 17;
     private static final String NEXT_ROOM_ID  = "gauntlet_room";
-    private Image doorPortalGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/doorPortal1.gif");
+    private Image doorPortalGif = AssetManager.getGif("/assets/rooms/village/doorPortal1.gif");
 
     //------------------- Entities ------------------------
     private final Bench bench;
@@ -67,7 +67,7 @@ public class VillageRoom extends Room {
     private BufferedImage smallTree = AssetManager.getImage("/assets/rooms/village/environment/smallTree.png");
     private BufferedImage rightArrowSign = AssetManager.getImage("/assets/rooms/village/environment/rightArrowSign.png");
     
-    private Image frogGif = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/environment/frogIdle.gif");
+    private Image frogGif = AssetManager.getGif("/assets/rooms/village/environment/frogIdle.gif");
     
     private static BufferedImage bigBush = AssetManager.getImage("/assets/rooms/village/environment/bigBush.png");
     private BufferedImage anotherBigBush = AssetManager.getImage("/assets/rooms/village/environment/anotherBigBush.png");
@@ -77,7 +77,7 @@ public class VillageRoom extends Room {
     private BufferedImage thirdGrave = AssetManager.getImage("/assets/rooms/village/environment/thirdGrave.png");
     private BufferedImage prayingMary = AssetManager.getImage("/assets/rooms/village/environment/prayingMary.png");
     
-    private Image butterflyOne = Toolkit.getDefaultToolkit().getImage("src/assets/rooms/village/environment/butterfly.gif");
+    private Image butterflyOne = AssetManager.getGif("/assets/rooms/village/environment/butterfly.gif");
     
     //-------------------- Parllax Background Stuff -----------------------    
     private BufferedImage sky2Image = AssetManager.getImage("/assets/rooms/village/background/sky.png");
@@ -223,7 +223,11 @@ public class VillageRoom extends Room {
             player.getTop() < DOOR_Y + DOOR_H &&
             player.getTop() + player.getHeight() > DOOR_Y;
 
-        if (overlapping) doorTriggered = true;
+        if (overlapping)
+        {
+            doorTriggered = true;
+            SoundManager.playSfx("doorOpen");
+        }
     }
 
     //------------------------ Draw --------------------------
