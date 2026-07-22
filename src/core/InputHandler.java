@@ -36,7 +36,6 @@ public class InputHandler extends KeyAdapter{
     
     @Override
     public void keyPressed(KeyEvent e){
-        
         if(!held.contains(e.getKeyCode()))
             justPressed.add(e.getKeyCode());
         held.add(e.getKeyCode());

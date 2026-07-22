@@ -51,8 +51,5 @@ public class BossBolt {
     public void setActive(boolean active) {
         this.active = active;
     }
-        
-        
-    
     
 }
