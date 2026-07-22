@@ -331,8 +331,7 @@ public class Boss extends Entity implements ActionListener{
             if (!b.isActive()) continue;
             float bx = b.getX() - BossBolt.SIZE / 2f;
             float by = b.getY() - BossBolt.SIZE / 2f;
-            boolean overlap = px < bx + BossBolt.SIZE && px + pw > bx
-                            && py < by + BossBolt.SIZE && py + ph > by;
+            boolean overlap = px < bx + BossBolt.SIZE && px + pw > bx && py < by + BossBolt.SIZE && py + ph > by;
             if (overlap) { 
                 b.setActive(false);
                 hit = true;

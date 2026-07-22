@@ -5,7 +5,6 @@
 package state;
 
 import core.InputHandler;
-import core.SoundManager;
 import java.awt.Graphics2D;
 
 /**

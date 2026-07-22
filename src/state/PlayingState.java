@@ -6,8 +6,6 @@ package state;
 
 import core.Camera;
 import core.InputHandler;
-import core.SaveData;
-import core.SoundManager;
 import entity.Player;
 import java.awt.Color;
 import java.awt.Font;
